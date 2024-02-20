@@ -12,8 +12,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteUsuario = exports.putUsuario = exports.postUsuario = exports.getUsuario = exports.getUsuarios = void 0;
 const usuario_model_1 = require("../models/usuario.model");
 const getUsuarios = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    yield usuario_model_1.Usuario.sync();
     const usuarios = yield usuario_model_1.Usuario.findAll();
-    return res.json({
+    return res.status(200).json({
         data: usuarios
     });
 });
@@ -34,6 +35,7 @@ exports.getUsuario = getUsuario;
 const postUsuario = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { body } = req;
     try {
+        yield usuario_model_1.Usuario.sync();
         // const usuario = new Usuario(body) // Usuario no tiene constructor
         const usuarioDb = yield usuario_model_1.Usuario.findOne({ where: { email: body.email } });
         if (!usuarioDb) {
@@ -103,4 +105,4 @@ const deleteUsuario = (req, res) => {
     });
 };
 exports.deleteUsuario = deleteUsuario;
-//# sourceMappingURL=usuarios.js.map
+//# sourceMappingURL=usuarios.controller.js.map

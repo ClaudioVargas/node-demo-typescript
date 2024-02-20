@@ -1,12 +1,13 @@
 import { Request, Response } from "express" 
-import Usuario from "../models/usuario"
+import { Usuario } from "../models/usuario.model"
 
 
 export const getUsuarios = async ( req: Request, res: Response ) => {
 
+    await Usuario.sync()
     const usuarios = await Usuario.findAll()
 
-    return res.json({
+    return res.status(200).json({
         data: usuarios
     })
 }
@@ -31,6 +32,7 @@ export const postUsuario = async ( req: Request, res: Response ) => {
     const { body } = req
 
     try {
+        await Usuario.sync()
         // const usuario = new Usuario(body) // Usuario no tiene constructor
         const usuarioDb = await Usuario.findOne({ where: {email: body.email} })
         if(!usuarioDb){

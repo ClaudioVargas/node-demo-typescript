@@ -1,6 +1,6 @@
 import express, { Application } from 'express'
 
-import userRoutes from '../routes/usuario'
+import userRoutes from '../routes/usuario.router'
 
 import cors from 'cors'
 
@@ -28,7 +28,7 @@ class Server {
 
     listen(){
         this.app.listen( this.port, () => {
-          console.info("Servidor corriendo en puerto ", +this.port)  
+          console.info("Servidor corriendo en puerto !!!!!!", +this.port)  
         } )
     }
 

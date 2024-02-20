@@ -1,9 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const sequelize_1 = require("sequelize");
-const db = new sequelize_1.Sequelize('node_demo', 'root', '1234', {
+const core_1 = require("@sequelize/core");
+const usuario_model_1 = require("../models/usuario.model");
+const db = new core_1.Sequelize('node_demo', 'root', '1234', {
     host: 'localhost',
     dialect: 'mysql',
+    models: [usuario_model_1.Usuario]
     // logging: false
 });
 exports.default = db;

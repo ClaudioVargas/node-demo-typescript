@@ -13,7 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const usuario_1 = __importDefault(require("../routes/usuario"));
+const usuario_router_1 = __importDefault(require("../routes/usuario.router"));
 const cors_1 = __importDefault(require("cors"));
 const connection_1 = __importDefault(require("../db/connection"));
 class Server {
@@ -29,11 +29,11 @@ class Server {
         this.routes();
     }
     routes() {
-        this.app.use(this.apiPaths.usuario, usuario_1.default);
+        this.app.use(this.apiPaths.usuario, usuario_router_1.default);
     }
     listen() {
         this.app.listen(this.port, () => {
-            console.info("Servidor corriendo en puerto ", +this.port);
+            console.info("Servidor corriendo en puerto !!!!!!", +this.port);
         });
     }
     middlewares() {
