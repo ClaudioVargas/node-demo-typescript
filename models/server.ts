@@ -1,6 +1,8 @@
 import express, { Application } from 'express'
 
 import userRoutes from '../routes/usuario.router'
+import postRoutes from '../routes/post.router'
+import temaRoutes from '../routes/tema.router'
 
 import cors from 'cors'
 
@@ -10,7 +12,9 @@ class Server {
     private app: Application;
     private port: string
     private apiPaths = {
-        usuario: '/api/usuarios'
+        usuario: '/api/usuarios',
+        post: '/api/post',
+        tema: '/api/tema'
     }
 
     constructor(){
@@ -24,11 +28,13 @@ class Server {
 
     routes() {
         this.app.use(this.apiPaths.usuario, userRoutes)
+        this.app.use(this.apiPaths.post, postRoutes)
+        this.app.use(this.apiPaths.tema, temaRoutes)
     }
 
     listen(){
         this.app.listen( this.port, () => {
-          console.info("Servidor corriendo en puerto !!!!!!", +this.port)  
+          console.info("Servidor corriendo en puerto !!", +this.port)  
         } )
     }
 

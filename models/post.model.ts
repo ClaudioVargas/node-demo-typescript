@@ -1,10 +1,10 @@
 import { Sequelize, DataTypes, Model, InferAttributes, InferCreationAttributes, CreationOptional, NonAttribute } from '@sequelize/core';
 import { Attribute, PrimaryKey, AutoIncrement, NotNull, HasMany } from '@sequelize/core/decorators-legacy';
-import { Post } from './post.model';
+import { Usuario } from './usuario.model';
 
 const sequelize = new Sequelize('mysql::memory:');
 
-export class Usuario extends Model<InferAttributes<Usuario>, InferCreationAttributes<Usuario>> {
+export class Post extends Model<InferAttributes<Post>, InferCreationAttributes<Post>> {
   @Attribute(DataTypes.INTEGER)
   @PrimaryKey
   @AutoIncrement
@@ -12,17 +12,18 @@ export class Usuario extends Model<InferAttributes<Usuario>, InferCreationAttrib
 
   @Attribute(DataTypes.STRING)
   @NotNull
-  declare name: string;
+  declare title: string;
 
   @Attribute(DataTypes.STRING)
   @NotNull
-  declare email: string;
+  declare body: string;
   
   @Attribute(DataTypes.BOOLEAN)
   @NotNull
-  declare isActive: boolean;  
-
-  @HasMany(() => Post, /* foreign key */ 'usuarioId')
-  declare posts?: NonAttribute<Post[]>;
+  declare isActive: boolean;
+  
+  @Attribute(DataTypes.INTEGER)
+  @NotNull
+  declare usuarioId: number;
 
 }
