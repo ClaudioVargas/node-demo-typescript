@@ -1,6 +1,9 @@
 import { Request, Response } from "express"
 
 import { Usuario } from "../models/usuario.model"
+import { UsuarioTema } from "../models/usuarioTemas.model"
+import { and } from "@sequelize/core"
+import { Tema } from "../models/tema.model"
 
 
 export const getUsuarios = async ( req: Request, res: Response ) => {
@@ -33,9 +36,10 @@ export const postUsuario = async ( req: Request, res: Response ) => {
     const { body } = req
 
     try {
-        await Usuario.sync()
-        // const usuario = new Usuario(body) // Usuario no tiene constructor
-        const usuarioDb = await Usuario.findOne({ where: {email: body.email} })
+        
+        await Usuario.sync({alter: true})
+        const usuario = new Usuario(body)
+        const usuarioDb = await Usuario.findOne({ where: {email: usuario.email} })
         if(!usuarioDb){
             body.createdAt = new Date()
             body.updatedAt = new Date()
@@ -45,7 +49,52 @@ export const postUsuario = async ( req: Request, res: Response ) => {
             })
         } else {
             return res.status(409).json({
-            msg: 'Email '+ body.email + ' ya existe'
+            msg: 'Email '+ usuario.email + ' ya existe'
+        })
+        }
+
+    } catch (error) {
+        res.status(500).json({
+            msg: 'Contecte con el administrador'
+        })
+    }
+    res.json({
+        msg: 'postUsuario',
+        body
+    })
+}
+
+export const postLikeTema = async ( req: Request, res: Response ) => {
+    const { body } = req
+    
+    try {
+        
+        await UsuarioTema.sync({alter: true})
+        const usuarioTema = new UsuarioTema(body)
+        console.log("*******************+++")
+        const usuario = await Tema.findOne({ where: { id: usuarioTema.usuarioId}})
+        if(!usuario) {
+            return res.status(409).json({
+                msg: "usuario con id "+ usuarioTema.usuarioId +" no existe"
+            })
+        }
+        const tema = await Tema.findOne({ where: { id: usuarioTema.temaId}})
+        if(!tema) {
+            return res.status(409).json({
+                msg: "tema con id "+ usuarioTema.temaId +" no existe"
+            })
+        }
+        const usuarioTemaDb = await UsuarioTema.findOne({ where: {usuarioId: usuarioTema.usuarioId, temaId: usuarioTema.temaId} })
+        if(!usuarioTemaDb){
+            body.createdAt = new Date()
+            body.updatedAt = new Date()
+            const response = await UsuarioTema.create(body);
+            return res.status(201).json({
+                msg: response
+            })
+        } else {
+            return res.status(409).json({
+            msg: 'usuarioTema con id: '+ usuarioTema.temaId + ' ya existe'
         })
         }
 

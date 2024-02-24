@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { deleteUsuario, getUsuario, getUsuarios, postUsuario, putUsuario } from "../controllers/usuarios.controller";
+import { deleteUsuario, getUsuario, getUsuarios, postLikeTema, postUsuario, putUsuario } from "../controllers/usuarios.controller";
 import ValidateCreate from "../validators/user.validator";
 
 const router = Router()
@@ -8,6 +8,7 @@ const router = Router()
 router.get('/', getUsuarios)
 router.get('/:id', getUsuario)
 router.post('/', ValidateCreate, postUsuario)
+router.post('/addTema', postLikeTema)
 router.put('/', ValidateCreate, putUsuario)
 router.delete('/:id', deleteUsuario)
 

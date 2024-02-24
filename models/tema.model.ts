@@ -1,6 +1,7 @@
 import { Sequelize, DataTypes, Model, InferAttributes, InferCreationAttributes, CreationOptional, NonAttribute } from '@sequelize/core';
-import { Attribute, PrimaryKey, AutoIncrement, NotNull, BelongsToMany } from '@sequelize/core/decorators-legacy';
+import { Attribute, PrimaryKey, AutoIncrement, NotNull, BelongsToMany, HasMany } from '@sequelize/core/decorators-legacy';
 import { Post } from './post.model';
+import { UsuarioTema } from './usuarioTemas.model';
 
 const sequelize = new Sequelize('mysql::memory:');
 
@@ -26,5 +27,9 @@ export class Tema extends Model<InferAttributes<Tema>, InferCreationAttributes<T
     through: 'TemaPost',
   })
   declare temaPost?: NonAttribute<Post[]>;
+
+  
+  @HasMany(() => UsuarioTema, /* foreign key */ 'temaId')
+  declare usuarios?: NonAttribute<UsuarioTema[]>;
 
 }
