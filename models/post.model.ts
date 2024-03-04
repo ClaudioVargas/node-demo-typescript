@@ -1,8 +1,12 @@
 import { Sequelize, DataTypes, Model, InferAttributes, InferCreationAttributes, CreationOptional, NonAttribute } from '@sequelize/core';
-import { Attribute, PrimaryKey, AutoIncrement, NotNull, HasMany } from '@sequelize/core/decorators-legacy';
+import { Attribute, PrimaryKey, AutoIncrement, NotNull, HasMany, BelongsToMany } from '@sequelize/core/decorators-legacy';
 import { Usuario } from './usuario.model';
+import { Tema } from './tema.model';
 
-const sequelize = new Sequelize('mysql::memory:');
+// const sequelize = new Sequelize('mysql::memory:');
+
+// import db from ''
+
 
 export class Post extends Model<InferAttributes<Post>, InferCreationAttributes<Post>> {
   @Attribute(DataTypes.INTEGER)
@@ -25,5 +29,12 @@ export class Post extends Model<InferAttributes<Post>, InferCreationAttributes<P
   @Attribute(DataTypes.INTEGER)
   @NotNull
   declare usuarioId: number;
+  
+  @BelongsToMany(() => Tema, {
+    through: 'post_tema',
+    foreignKey: 'postId',
+    otherKey: 'temaId'
+  })
+  declare postTemas?: NonAttribute<Tema[]>;
 
 }

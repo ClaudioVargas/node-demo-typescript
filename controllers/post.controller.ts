@@ -58,7 +58,7 @@ export const putPost = async (req: Request, res: Response) => {
             body.updatedAt = new Date()
             postDb.set(body);
             // postDb.update({
-            //     updatedAt: new Date()
+            //     isActive: false
             // }) para actualizar registros especificos 
 
 

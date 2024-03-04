@@ -3,7 +3,7 @@ import { Attribute, PrimaryKey, AutoIncrement, NotNull, HasMany } from '@sequeli
 import { Post } from './post.model';
 import { UsuarioTema } from './usuarioTemas.model';
 
-const sequelize = new Sequelize('mysql::memory:');
+// const sequelize = new Sequelize('mysql::memory:');
 
 export class Usuario extends Model<InferAttributes<Usuario>, InferCreationAttributes<Usuario>> {
   @Attribute(DataTypes.INTEGER)
@@ -25,8 +25,4 @@ export class Usuario extends Model<InferAttributes<Usuario>, InferCreationAttrib
 
   @HasMany(() => Post, /* foreign key */ 'usuarioId')
   declare posts?: NonAttribute<Post[]>;
-
-  @HasMany(() => UsuarioTema, /* foreign key */ 'usuarioId')
-  declare temas?: NonAttribute<UsuarioTema[]>;
-
 }

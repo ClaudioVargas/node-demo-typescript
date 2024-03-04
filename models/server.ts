@@ -7,6 +7,8 @@ import temaRoutes from '../routes/tema.router'
 import cors from 'cors'
 
 import db from '../db/connection'
+import { Usuario } from './usuario.model'
+// import { UsuarioTema } from './postTemas.model'
 
 class Server {
     private app: Application;
@@ -35,7 +37,10 @@ class Server {
     listen(){
         this.app.listen( this.port, () => {
           console.info("Servidor corriendo en puerto !!", +this.port)  
-        } )
+            db.models.Tema.sync({alter: true})
+            db.models.Usuario.sync({alter: true})
+            db.models.Post.sync({alter: true})
+        })
     }
 
     middlewares() {
