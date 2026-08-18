@@ -1,6 +1,7 @@
 import { Request, Response } from "express"
 
 import { Post } from "../models/post.model"
+import { Tema } from "../models/tema.model"
 
 
 export const getPosts = async (req: Request, res: Response) => {
@@ -90,4 +91,36 @@ export const deletePost = (req: Request, res: Response) => {
         msg: 'deletePost',
         id
     })
+}
+
+export const getPostsByUsuario = async (req: Request, res: Response) => {
+    const { id } = req.params
+
+    try {
+        // Buscar todos los posts que pertenecen al usuario con id = usuarioId
+        const posts = await Post.findAll({
+            where: { usuarioId: id },
+            include: [
+                {
+                    model: Tema,
+                    through: { attributes: [] } // evita mostrar la tabla intermedia post_tema
+                }
+            ]
+        })
+
+        if (!posts || posts.length === 0) {
+            return res.status(404).json({
+                msg: "No se encontraron posts para el usuario con id " + id
+            })
+        }
+
+        return res.status(200).json({
+            data: posts
+        })
+    } catch (error) {
+        return res.status(500).json({
+            msg: "Conecte con el administrador",
+            error
+        })
+    }
 }
