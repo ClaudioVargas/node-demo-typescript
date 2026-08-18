@@ -17,6 +17,7 @@
     "@types/express": "^4.17.25",
     "@types/express-session": "^1.19.0",
     "@types/jest": "^30.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/passport": "^1.0.17",
     "@types/passport-google-oauth20": "^2.0.14",
     "@types/passport-local": "^1.0.38",
@@ -45,7 +46,13 @@
   "jest": {
     "preset": "ts-jest",
     "testEnvironment": "node",
-    "moduleFileExtensions": ["ts","js","json"],
-    "testMatch": ["**/tests/**/*.test.(ts|js)"]
+    "moduleFileExtensions": [
+      "ts",
+      "js",
+      "json"
+    ],
+    "testMatch": [
+      "**/tests/**/*.test.(ts|js)"
+    ]
   }
 }
