@@ -3,24 +3,29 @@ import express, { Application, NextFunction, Request, Response } from 'express'
 import userRoutes from './routes/usuario.router'
 import postRoutes from './routes/post.router'
 import temaRoutes from './routes/tema.router'
+import streamRoutes from './routes/stream.router'
 
 import cors from 'cors'
+import helmet from 'helmet'
+import jwt from 'jsonwebtoken'
 
 import db from './db/connection'
 import { Usuario } from './models/usuario.model'
-// import { UsuarioTema } from './postTemas.model'
 
 // oauth
 import passportLocal from "passport-local";
 import passport from 'passport'
 import passportGoogle from "passport-google-oauth20";
 const GoogleStrategy = passportGoogle.Strategy;
-// import expressSesion from 'express-session'
-// const session = require('express-session')
 
 import session from 'express-session'
 
 import 'dotenv/config'
+import { ApiError } from './validators/apiError'
+import { authJwt } from './validators/authJwt'
+import { errorHandler } from './validators/errorHandler'
+
+const SECRET = process.env.JWT_SECRET || 'secretKey'
 
 class Server {
     private app: Application;
@@ -28,7 +33,8 @@ class Server {
     private apiPaths = {
         usuario: '/api/usuarios',
         post: '/api/post',
-        tema: '/api/tema'
+        tema: '/api/tema',
+        utils: '/api/utils'
     }
 
     private passport: any
@@ -45,9 +51,8 @@ class Server {
         //se definen rutas
         this.routes()
 
-
-
-
+        // add global error handler
+        this.app.use(errorHandler)
 
         const clientId = process.env.GOOGLE_CLIENT_ID || ''
         const clientSecret = process.env.GOOGLE_CLIENT_SECRET || ''
@@ -77,6 +82,7 @@ class Server {
         this.app.use(this.apiPaths.usuario, userRoutes)
         this.app.use(this.apiPaths.post, postRoutes)
         this.app.use(this.apiPaths.tema, temaRoutes)
+        this.app.use(this.apiPaths.utils, streamRoutes)
 
         //test
         this.app.get("/main", (req, res) => {
@@ -102,6 +108,24 @@ class Server {
             res.send("*** Fail ***")
         })
 
+        // Simple JWT login for examples/tests
+        this.app.post('/login', (req: Request, res: Response, next: NextFunction) => {
+            const { username, password } = req.body || {}
+            if (!username || !password) return next(new ApiError(400, 'username and password required'))
+
+            // NOTE: placeholder auth - replace with real user check
+            if (username === 'admin' && password === 'password') {
+                const token = jwt.sign({ username }, SECRET, { expiresIn: '1h' })
+                return res.json({ token })
+            }
+
+            return next(new ApiError(401, 'Invalid credentials'))
+        })
+
+        // JWT-protected example
+        this.app.get('/jwt-protected', authJwt, (req: Request, res: Response) => {
+            res.json({ ok: true, user: (req as any).user })
+        })
 
     }
 
@@ -121,6 +145,9 @@ class Server {
     middlewares() {
         // cors
         this.app.use(cors())
+
+        // security headers
+        this.app.use(helmet())
 
         //lectura body
         this.app.use(express.json())
