@@ -24,6 +24,7 @@ import 'dotenv/config'
 import { ApiError } from './validators/apiError'
 import { authJwt } from './validators/authJwt'
 import { errorHandler } from './validators/errorHandler'
+import { setupSwagger } from './swagger'
 
 const SECRET = process.env.JWT_SECRET || 'secretKey'
 
@@ -48,12 +49,17 @@ class Server {
         this.app.use(passport.initialize())
         this.app.use(passport.session())
         this.middlewares()
+        
+        // Levantar Swagger Docs
+        setupSwagger(this.app as any);
+
         //se definen rutas
         this.routes()
 
         // add global error handler
         this.app.use(errorHandler)
 
+        
         const clientId = process.env.GOOGLE_CLIENT_ID || ''
         const clientSecret = process.env.GOOGLE_CLIENT_SECRET || ''
         

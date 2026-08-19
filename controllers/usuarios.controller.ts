@@ -6,7 +6,7 @@ import { and } from "@sequelize/core"
 import { Tema } from "../models/tema.model"
 
 
-export const getUsuarios = async ( req: Request, res: Response ) => {
+export const getUsuarios = async (req: Request, res: Response) => {
 
     // await Usuario.sync()
     const usuarios = await Usuario.findAll()
@@ -16,15 +16,15 @@ export const getUsuarios = async ( req: Request, res: Response ) => {
     })
 }
 
-export const getUsuario = async ( req: Request, res: Response ) => {
+export const getUsuario = async (req: Request, res: Response) => {
 
     const { id } = req.params
 
     const usuario = await Usuario.findByPk(id)
 
-    if(!usuario) {
+    if (!usuario) {
         return res.status(404).json({
-            msg: "Usuario con id "+id+" no encontrado" 
+            msg: "Usuario con id " + id + " no encontrado"
         })
     }
     return res.json({
@@ -32,15 +32,15 @@ export const getUsuario = async ( req: Request, res: Response ) => {
     })
 }
 
-export const postUsuario = async ( req: Request, res: Response ) => {
+export const postUsuario = async (req: Request, res: Response) => {
     const { body } = req
 
     try {
-        
-        await Usuario.sync({alter: true})
+
+        await Usuario.sync({ alter: true })
         const usuario = new Usuario(body)
-        const usuarioDb = await Usuario.findOne({ where: {email: usuario.email} })
-        if(!usuarioDb){
+        const usuarioDb = await Usuario.findOne({ where: { email: usuario.email } })
+        if (!usuarioDb) {
             body.createdAt = new Date()
             body.updatedAt = new Date()
             const response = await Usuario.create(body);
@@ -49,8 +49,8 @@ export const postUsuario = async ( req: Request, res: Response ) => {
             })
         } else {
             return res.status(409).json({
-            msg: 'Email '+ usuario.email + ' ya existe'
-        })
+                msg: 'Email ' + usuario.email + ' ya existe'
+            })
         }
 
     } catch (error) {
@@ -64,28 +64,28 @@ export const postUsuario = async ( req: Request, res: Response ) => {
     })
 }
 
-export const postLikeTema = async ( req: Request, res: Response ) => {
+export const postLikeTema = async (req: Request, res: Response) => {
     const { body } = req
-    
+
     try {
-        
-        await UsuarioTema.sync({alter: true})
+
+        await UsuarioTema.sync({ alter: true })
         const usuarioTema = new UsuarioTema(body)
         console.log("*******************+++")
-        const usuario = await Tema.findOne({ where: { id: usuarioTema.usuarioId}})
-        if(!usuario) {
+        const usuario = await Tema.findOne({ where: { id: usuarioTema.usuarioId } })
+        if (!usuario) {
             return res.status(409).json({
-                msg: "usuario con id "+ usuarioTema.usuarioId +" no existe"
+                msg: "usuario con id " + usuarioTema.usuarioId + " no existe"
             })
         }
-        const tema = await Tema.findOne({ where: { id: usuarioTema.temaId}})
-        if(!tema) {
+        const tema = await Tema.findOne({ where: { id: usuarioTema.temaId } })
+        if (!tema) {
             return res.status(409).json({
-                msg: "tema con id "+ usuarioTema.temaId +" no existe"
+                msg: "tema con id " + usuarioTema.temaId + " no existe"
             })
         }
-        const usuarioTemaDb = await UsuarioTema.findOne({ where: {usuarioId: usuarioTema.usuarioId, temaId: usuarioTema.temaId} })
-        if(!usuarioTemaDb){
+        const usuarioTemaDb = await UsuarioTema.findOne({ where: { usuarioId: usuarioTema.usuarioId, temaId: usuarioTema.temaId } })
+        if (!usuarioTemaDb) {
             body.createdAt = new Date()
             body.updatedAt = new Date()
             const response = await UsuarioTema.create(body);
@@ -94,8 +94,8 @@ export const postLikeTema = async ( req: Request, res: Response ) => {
             })
         } else {
             return res.status(409).json({
-            msg: 'usuarioTema con id: '+ usuarioTema.temaId + ' ya existe'
-        })
+                msg: 'usuarioTema con id: ' + usuarioTema.temaId + ' ya existe'
+            })
         }
 
     } catch (error) {
@@ -109,30 +109,30 @@ export const postLikeTema = async ( req: Request, res: Response ) => {
     })
 }
 
-export const putUsuario = async ( req: Request, res: Response ) => {
+export const putUsuario = async (req: Request, res: Response) => {
     const { body } = req
 
     try {
         const usuarioDb = await Usuario.findByPk(body.id)
         console.log("body", body)
-        if(usuarioDb) {
+        if (usuarioDb) {
             body.updatedAt = new Date()
             usuarioDb.set(body);
             // usuarioDb.update({
             //     updatedAt: new Date()
             // }) para actualizar registros especificos 
-            
-            
+
+
             await usuarioDb.save();
             return res.json({
                 src: 'usuario editado correctamente'
             })
         } else {
             return res.status(409).json({
-                msg: 'Usuario con id '+ body.id + 'no exisete'
+                msg: 'Usuario con id ' + body.id + 'no exisete'
             })
         }
-            
+
     } catch (error) {
         res.status(500).json({
             msg: 'Contecte con el administrador',
@@ -145,7 +145,7 @@ export const putUsuario = async ( req: Request, res: Response ) => {
     })
 }
 
-export const deleteUsuario = ( req: Request, res: Response ) => {
+export const deleteUsuario = (req: Request, res: Response) => {
     const { id } = req.params
     res.json({
         msg: 'deleteUsuario',
