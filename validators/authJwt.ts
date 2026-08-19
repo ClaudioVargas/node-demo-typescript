@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
 import { ApiError } from './apiError'
+import { isTokenBlacklisted } from './tokenBlacklist'
 
 const SECRET = process.env.JWT_SECRET || 'secretKey'
 
@@ -14,6 +15,11 @@ export function authJwt(req: JwtRequest, res: Response, next: NextFunction) {
     return next(new ApiError(401, 'No token provided'))
   }
   const token = auth.split(' ')[1]
+
+  if (isTokenBlacklisted(token)) {
+    return next(new ApiError(401, 'Token revoked'))
+  }
+
   try {
     const payload = jwt.verify(token, SECRET)
     req.user = payload

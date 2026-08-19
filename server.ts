@@ -1,5 +1,6 @@
 import express, { Application, NextFunction, Request, Response } from 'express'
 
+import authRoutes from './routes/auth.router'
 import userRoutes from './routes/usuario.router'
 import postRoutes from './routes/post.router'
 import temaRoutes from './routes/tema.router'
@@ -85,6 +86,13 @@ class Server {
     }
 
     routes() {
+        // Rutas públicas de autenticación
+        this.app.use('/api/auth', authRoutes)
+
+        // Proteger todas las rutas /api con authJwt a partir de aquí
+        this.app.use('/api', authJwt)
+
+        // Rutas protegidas (serán interceptadas por authJwt)
         this.app.use(this.apiPaths.usuario, userRoutes)
         this.app.use(this.apiPaths.post, postRoutes)
         this.app.use(this.apiPaths.tema, temaRoutes)
@@ -114,24 +122,7 @@ class Server {
             res.send("*** Fail ***")
         })
 
-        // Simple JWT login for examples/tests
-        this.app.post('/login', (req: Request, res: Response, next: NextFunction) => {
-            const { username, password } = req.body || {}
-            if (!username || !password) return next(new ApiError(400, 'username and password required'))
-
-            // NOTE: placeholder auth - replace with real user check
-            if (username === 'admin' && password === 'password') {
-                const token = jwt.sign({ username }, SECRET, { expiresIn: '1h' })
-                return res.json({ token })
-            }
-
-            return next(new ApiError(401, 'Invalid credentials'))
-        })
-
-        // JWT-protected example
-        this.app.get('/jwt-protected', authJwt, (req: Request, res: Response) => {
-            res.json({ ok: true, user: (req as any).user })
-        })
+        // NOTE: legacy test endpoints removed in favor of /api/auth
 
     }
 

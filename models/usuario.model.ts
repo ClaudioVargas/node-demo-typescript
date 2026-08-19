@@ -18,6 +18,10 @@ export class Usuario extends Model<InferAttributes<Usuario>, InferCreationAttrib
   @Attribute(DataTypes.STRING)
   @NotNull
   declare email: string;
+
+  @Attribute(DataTypes.STRING)
+  @NotNull
+  declare password: string;
   
   @Attribute(DataTypes.BOOLEAN)
   @NotNull
