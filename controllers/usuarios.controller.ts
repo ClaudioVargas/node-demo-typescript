@@ -4,6 +4,8 @@ import { Usuario } from "../models/usuario.model"
 import { UsuarioTema } from "../models/usuarioTemas.model"
 import { and } from "@sequelize/core"
 import { Tema } from "../models/tema.model"
+import bcrypt from "bcrypt";
+
 
 
 export const getUsuarios = async (req: Request, res: Response) => {
@@ -33,36 +35,48 @@ export const getUsuario = async (req: Request, res: Response) => {
 }
 
 export const postUsuario = async (req: Request, res: Response) => {
-    const { body } = req
+  const { body } = req;
 
-    try {
+  try {
+    await Usuario.sync({ alter: true });
 
-        await Usuario.sync({ alter: true })
-        const usuario = new Usuario(body)
-        const usuarioDb = await Usuario.findOne({ where: { email: usuario.email } })
-        if (!usuarioDb) {
-            body.createdAt = new Date()
-            body.updatedAt = new Date()
-            const response = await Usuario.create(body);
-            return res.status(201).json({
-                msg: response
-            })
-        } else {
-            return res.status(409).json({
-                msg: 'Email ' + usuario.email + ' ya existe'
-            })
-        }
-
-    } catch (error) {
-        res.status(500).json({
-            msg: 'Contecte con el administrador'
-        })
+    // Verificar si el email ya existe
+    const usuarioDb = await Usuario.findOne({ where: { email: body.email } });
+    if (usuarioDb) {
+      return res.status(409).json({
+        msg: `Email ${body.email} ya existe`,
+      });
     }
-    res.json({
-        msg: 'postUsuario',
-        body
-    })
-}
+
+    // Encriptar el password antes de guardar
+    const saltRounds = 16;
+    const hashedPassword = await bcrypt.hash(body.password, saltRounds);
+
+    // Crear usuario con password encriptado
+    const response = await Usuario.create({
+      ...body,
+      password: hashedPassword,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    return res.status(201).json({
+      msg: "Usuario creado correctamente",
+      usuario: {
+        id: response.id,
+        name: response.name,
+        email: response.email,
+        isActive: response.isActive,
+        // no devolver el password en la respuesta
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      msg: "Conecte con el administrador",
+    });
+  }
+};
 
 export const postLikeTema = async (req: Request, res: Response) => {
     const { body } = req

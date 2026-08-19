@@ -13,11 +13,24 @@ function hashPassword(password: string) {
   return `${salt}$${derived}`
 }
 
+
+
 function verifyPassword(stored: string, attempted: string) {
-  const [salt, derived] = stored.split('$')
-  if (!salt || !derived) return false
-  const attemptedDerived = crypto.pbkdf2Sync(attempted, salt, 100000, 64, 'sha512').toString('hex')
-  return crypto.timingSafeEqual(Buffer.from(derived, 'hex'), Buffer.from(attemptedDerived, 'hex'))
+  const [salt, derived] = stored.split("$");
+  if (!salt || !derived) return false;
+
+  const attemptedDerived = crypto
+    .pbkdf2Sync(attempted, salt, 100000, 64, "sha512")
+    .toString("hex");
+
+  const derivedBuffer = Buffer.from(derived, "hex");
+  const attemptedBuffer = Buffer.from(attemptedDerived, "hex");
+
+  // Convertir a Uint8Array para que TypeScript esté conforme
+  return crypto.timingSafeEqual(
+    new Uint8Array(derivedBuffer),
+    new Uint8Array(attemptedBuffer)
+  );
 }
 
 export async function signup(req: Request, res: Response, next: NextFunction) {
@@ -72,4 +85,19 @@ export async function logout(req: Request, res: Response, next: NextFunction) {
   } catch (err) {
     next(err)
   }
+
+  
+}
+
+export async function hashPasswordTest(req: Request, res: Response, next: NextFunction) {
+  try {
+    // const { password } = req.body || {}
+    const password = "111111"
+    const hash = hashPassword(password)
+    return res.json({ ok: true, hash })
+  } catch (err) {
+    next(err)
+  }
+
+  
 }

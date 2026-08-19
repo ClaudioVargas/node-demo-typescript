@@ -50,7 +50,7 @@ class Server {
         this.app.use(passport.initialize())
         this.app.use(passport.session())
         this.middlewares()
-        
+
         // Levantar Swagger Docs
         setupSwagger(this.app as any);
 
@@ -60,18 +60,18 @@ class Server {
         // add global error handler
         this.app.use(errorHandler)
 
-        
+
         const clientId = process.env.GOOGLE_CLIENT_ID || ''
         const clientSecret = process.env.GOOGLE_CLIENT_SECRET || ''
-        
+
         this.passport = passport.use(new GoogleStrategy({
             clientID: clientId,
             clientSecret: clientSecret,
             callbackURL: "http://localhost:8000/auth/google/callback",
             passReqToCallback: true,
         }, (request, accessToken, refreshToken, profile, done) => {
-              return done(null, profile);
-            
+            return done(null, profile);
+
         }
         ))
 
@@ -88,6 +88,7 @@ class Server {
     routes() {
         // Rutas públicas de autenticación
         this.app.use('/api/auth', authRoutes)
+        // this.app.use('/api/hashPassword', authRoutes)
 
         // Proteger todas las rutas /api con authJwt a partir de aquí
         this.app.use('/api', authJwt)
@@ -141,7 +142,17 @@ class Server {
 
     middlewares() {
         // cors
-        this.app.use(cors())
+        // this.app.use(cors())
+        cors({
+            origin: [
+                "http://localhost:8000", // Swagger UI
+                "http://localhost:3000", // Postman (cuando pruebas con servidor local)
+                "http://127.0.0.1:3000", // alternativa localhost
+            ],
+            methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            allowedHeaders: ["Content-Type", "Authorization"],
+            credentials: true, // permite enviar cookies/autenticación si usas JWT en headers
+        })
 
         // security headers
         this.app.use(helmet())
