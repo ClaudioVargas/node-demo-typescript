@@ -3,10 +3,6 @@ import { Attribute, PrimaryKey, AutoIncrement, NotNull, HasMany, BelongsToMany }
 import { Usuario } from './usuario.model';
 import { Tema } from './tema.model';
 
-// const sequelize = new Sequelize('mysql::memory:');
-
-// import db from ''
-
 
 export class Post extends Model<InferAttributes<Post>, InferCreationAttributes<Post>> {
   @Attribute(DataTypes.INTEGER)

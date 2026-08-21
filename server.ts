@@ -2,6 +2,7 @@ import express, { Application, NextFunction, Request, Response } from 'express'
 
 import authRoutes from './routes/auth.router'
 import userRoutes from './routes/usuario.router'
+import roleRoutes from './routes/role.router'
 import postRoutes from './routes/post.router'
 import temaRoutes from './routes/tema.router'
 import streamRoutes from './routes/stream.router'
@@ -36,7 +37,8 @@ class Server {
         usuario: '/api/usuarios',
         post: '/api/post',
         tema: '/api/tema',
-        utils: '/api/utils'
+        utils: '/api/utils',
+        role: '/api/role'
     }
 
     private passport: any
@@ -95,6 +97,7 @@ class Server {
 
         // Rutas protegidas (serán interceptadas por authJwt)
         this.app.use(this.apiPaths.usuario, userRoutes)
+        this.app.use(this.apiPaths.role, roleRoutes)
         this.app.use(this.apiPaths.post, postRoutes)
         this.app.use(this.apiPaths.tema, temaRoutes)
         this.app.use(this.apiPaths.utils, streamRoutes)
@@ -148,6 +151,7 @@ class Server {
                 "http://localhost:8000", // Swagger UI
                 "http://localhost:3000", // Postman (cuando pruebas con servidor local)
                 "http://127.0.0.1:3000", // alternativa localhost
+                "http://localhost:5173" // react local
             ],
             methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             allowedHeaders: ["Content-Type", "Authorization"],
