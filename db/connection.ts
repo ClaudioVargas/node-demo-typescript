@@ -41,7 +41,7 @@ async function inicializarBaseDatos() {
 
     // 3. Crear un Usuario Administrador inicial si no existe ninguno
     const [adminUser, userAdminCreado] = await Usuario.findOrCreate({
-      where: { email: 'admin@correo.com' },
+      where: { email: 'claudio@gmail.com' },
       defaults: {
         name: 'Administrador Inicial',
         email: 'claudio@gmail.com',

@@ -139,10 +139,14 @@ router.post('/addTema', postLikeTema)
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Usuario'
+ *             $ref: '#/components/schemas/UpdateUsuarioSchema'
  *     responses:
  *       '200':
- *         description: Usuario actualizado
+ *         description: Usuario actualizado correctamente
+ *       '409':
+ *         description: El usuario con el ID proporcionado no existe
+ *       '500':
+ *         description: Error interno del servidor
  */
 router.put('/', ValidateCreate, putUsuario)
 

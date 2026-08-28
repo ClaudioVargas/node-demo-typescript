@@ -1,5 +1,5 @@
 import { Sequelize, DataTypes, Model, InferAttributes, InferCreationAttributes, CreationOptional, NonAttribute } from '@sequelize/core';
-import { Attribute, PrimaryKey, AutoIncrement, NotNull, HasMany, BelongsToMany } from '@sequelize/core/decorators-legacy';
+import { Attribute, PrimaryKey, AutoIncrement, NotNull, HasMany, BelongsToMany, BelongsTo } from '@sequelize/core/decorators-legacy';
 import { Usuario } from './usuario.model';
 import { Tema } from './tema.model';
 
@@ -25,6 +25,9 @@ export class Post extends Model<InferAttributes<Post>, InferCreationAttributes<P
   @Attribute(DataTypes.INTEGER)
   @NotNull
   declare usuarioId: number;
+
+  @BelongsTo(() => Usuario, 'usuarioId')
+  declare usuario?: NonAttribute<Usuario>;
   
   @BelongsToMany(() => Tema, {
     through: 'post_tema',

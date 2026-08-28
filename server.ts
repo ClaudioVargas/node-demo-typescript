@@ -149,15 +149,12 @@ class Server {
         cors({
             origin: [
                 "http://localhost:8000", // Swagger UI
-                "http://localhost:3000", // Postman (cuando pruebas con servidor local)
-                "http://127.0.0.1:3000", // alternativa localhost
                 "http://localhost:5173" // react local
             ],
             methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             allowedHeaders: ["Content-Type", "Authorization"],
             credentials: true, // permite enviar cookies/autenticación si usas JWT en headers
         })
-
         // security headers
         this.app.use(helmet())
 
@@ -176,8 +173,6 @@ class Server {
             throw new Error(error)
         }
     }
-
-
 }
 
 export default Server

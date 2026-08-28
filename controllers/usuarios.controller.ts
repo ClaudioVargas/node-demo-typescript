@@ -5,6 +5,8 @@ import { UsuarioTema } from "../models/usuarioTemas.model"
 import { and } from "@sequelize/core"
 import { Tema } from "../models/tema.model"
 import bcrypt from "bcrypt";
+import { UpdateUsuarioRequest } from "../interfaces/UpdateUsuarioRequest"
+// import { UpdateUsuarioRequest } from "../interfaces/UpdateUsuarioRequest"
 
 
 
@@ -22,7 +24,9 @@ export const getUsuario = async (req: Request, res: Response) => {
 
     const { id } = req.params
 
-    const usuario = await Usuario.findByPk(id)
+    const usuario = await Usuario.findByPk(id, {
+        attributes: { exclude: ['password'] }
+    })
 
     if (!usuario) {
         return res.status(404).json({
@@ -32,50 +36,62 @@ export const getUsuario = async (req: Request, res: Response) => {
     return res.json({
         data: usuario,
     })
+
+
+    // ***
+    //         "id": 5,
+    //     "name": "Administrador Inicial",
+    //     "email": "claudio@gmail.com",
+    //     "password": "6f0a4d34a7a67ea901216358af570110$d88d2c39674fc83ff90cc3f03d591aa2f164d99aeb00e0d9af7bec87c531a79ff40750b1d535ceb4ca545290cb3bd5fcc8d5d028813b4ab1d73cb8287e6aa963",
+    //     "isActive": true,
+    //     "roleId": 1,
+    //     "createdAt": "2026-08-21T19:40:17.791Z",
+    //     "updatedAt": "2026-08-21T19:40:17.791Z"
+    // ***
 }
 
 export const postUsuario = async (req: Request, res: Response) => {
-  const { body } = req;
+    const { body } = req;
 
-  try {
-    await Usuario.sync({ alter: true });
+    try {
+        await Usuario.sync({ alter: true });
 
-    // Verificar si el email ya existe
-    const usuarioDb = await Usuario.findOne({ where: { email: body.email } });
-    if (usuarioDb) {
-      return res.status(409).json({
-        msg: `Email ${body.email} ya existe`,
-      });
+        // Verificar si el email ya existe
+        const usuarioDb = await Usuario.findOne({ where: { email: body.email } });
+        if (usuarioDb) {
+            return res.status(409).json({
+                msg: `Email ${body.email} ya existe`,
+            });
+        }
+
+        // Encriptar el password antes de guardar
+        const saltRounds = 16;
+        const hashedPassword = await bcrypt.hash(body.password, saltRounds);
+
+        // Crear usuario con password encriptado
+        const response = await Usuario.create({
+            ...body,
+            password: hashedPassword,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        return res.status(201).json({
+            msg: "Usuario creado correctamente",
+            usuario: {
+                id: response.id,
+                name: response.name,
+                email: response.email,
+                isActive: response.isActive,
+                // no devolver el password en la respuesta
+            },
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            msg: "Conecte con el administrador",
+        });
     }
-
-    // Encriptar el password antes de guardar
-    const saltRounds = 16;
-    const hashedPassword = await bcrypt.hash(body.password, saltRounds);
-
-    // Crear usuario con password encriptado
-    const response = await Usuario.create({
-      ...body,
-      password: hashedPassword,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-
-    return res.status(201).json({
-      msg: "Usuario creado correctamente",
-      usuario: {
-        id: response.id,
-        name: response.name,
-        email: response.email,
-        isActive: response.isActive,
-        // no devolver el password en la respuesta
-      },
-    });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      msg: "Conecte con el administrador",
-    });
-  }
 };
 
 export const postLikeTema = async (req: Request, res: Response) => {
@@ -123,29 +139,26 @@ export const postLikeTema = async (req: Request, res: Response) => {
     })
 }
 
-export const putUsuario = async (req: Request, res: Response) => {
+export const putUsuario = async (
+    req: Request<{}, {}, UpdateUsuarioRequest>,
+    res: Response
+): Promise<Response | void> => {
     const { body } = req
-
     try {
         const usuarioDb = await Usuario.findByPk(body.id)
-        console.log("body", body)
-        if (usuarioDb) {
-            body.updatedAt = new Date()
-            usuarioDb.set(body);
-            // usuarioDb.update({
-            //     updatedAt: new Date()
-            // }) para actualizar registros especificos 
-
-
-            await usuarioDb.save();
-            return res.json({
-                src: 'usuario editado correctamente'
-            })
-        } else {
+        if (!usuarioDb) {
             return res.status(409).json({
-                msg: 'Usuario con id ' + body.id + 'no exisete'
-            })
+                msg: `Usuario con id ${body.id} no existe`
+            });
         }
+        // 4. Actualización segura usando directamente el método update del modelo
+        await usuarioDb.update(body, {
+            fields:['name', 'email']
+        });
+
+        return res.json({
+            src: 'usuario editado correctamente'
+        });
 
     } catch (error) {
         res.status(500).json({
