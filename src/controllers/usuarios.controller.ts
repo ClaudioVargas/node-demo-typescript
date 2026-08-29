@@ -37,17 +37,6 @@ export const getUsuario = async (req: Request, res: Response) => {
         data: usuario,
     })
 
-
-    // ***
-    //         "id": 5,
-    //     "name": "Administrador Inicial",
-    //     "email": "claudio@gmail.com",
-    //     "password": "6f0a4d34a7a67ea901216358af570110$d88d2c39674fc83ff90cc3f03d591aa2f164d99aeb00e0d9af7bec87c531a79ff40750b1d535ceb4ca545290cb3bd5fcc8d5d028813b4ab1d73cb8287e6aa963",
-    //     "isActive": true,
-    //     "roleId": 1,
-    //     "createdAt": "2026-08-21T19:40:17.791Z",
-    //     "updatedAt": "2026-08-21T19:40:17.791Z"
-    // ***
 }
 
 export const postUsuario = async (req: Request, res: Response) => {
@@ -72,6 +61,8 @@ export const postUsuario = async (req: Request, res: Response) => {
         const response = await Usuario.create({
             ...body,
             password: hashedPassword,
+            roleId: 2,
+            isActive: false,
             createdAt: new Date(),
             updatedAt: new Date(),
         });

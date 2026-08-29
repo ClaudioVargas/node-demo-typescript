@@ -1,7 +1,7 @@
-import Server from '../server'; // Ajusta la ruta según tu estructura
 import express from 'express';
 import passport from 'passport';
-import db from '../db/connection';
+import Server from '../src/server';
+import db from '../src/db/connection';
 
 // 1. Mockear dependencias externas para aislar la clase Server
 jest.mock('express', () => {

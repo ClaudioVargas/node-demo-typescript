@@ -19,6 +19,18 @@
  *           items:
  *             type: string
  *           example: ["node", "typescript"]
+ *     UsuarioPublic:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *           example: 1
+ *         nombre:
+ *           type: string
+ *           example: "Juan"
+ *         email:
+ *           type: string
+ *           example: "juan@example.com"
  */
 
 /**
@@ -36,7 +48,7 @@
  *             schema:
  *               type: array
  *               items:
- *                 $ref: '#/components/schemas/Usuario'
+ *                 $ref: '#/components/schemas/UsuarioPublic'
  */
 
 /**

@@ -1,8 +1,8 @@
 import express from 'express'
 import request from 'supertest'
-import streamRoutes from '../routes/stream.router'
-import { authJwt } from '../validators/authJwt'
 import jwt from 'jsonwebtoken'
+import { authJwt } from '../src/validators/authJwt'
+import  router  from  '../src/routes/stream.router'
 
 const SECRET = process.env.JWT_SECRET || 'secretKey'
 
@@ -13,7 +13,7 @@ describe('Utils routes (streams / buffer / jwt)', () => {
     app = express()
     app.use(express.json())
     // mount routes
-    app.use('/api/utils', streamRoutes)
+    app.use('/api/utils', router)
 
     // login route for tests (mirrors server behavior)
     app.post('/login', (req, res) => {
