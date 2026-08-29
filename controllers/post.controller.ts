@@ -1,126 +1,26 @@
-import { Request, Response } from "express"
-
-import { Post } from "../models/post.model"
-import { Tema } from "../models/tema.model"
-
-
-export const getPosts = async (req: Request, res: Response) => {
-
-    // await Post.sync()
-    const posts = await Post.findAll()
-
-    return res.status(200).json({
-        data: posts
-    })
-}
-
+import { Request, Response } from "express";
+import { findPosts, findPost, createPost, updatePost, findPostsByUsuario } from "../repository/post.repository";
+export const getPosts = async (_req: Request, res: Response) => res.status(200).json({ data: await findPosts() });
 export const getPost = async (req: Request, res: Response) => {
-
-    const { id } = req.params
-
-    const post = await Post.findByPk(id)
-
-    if (!post) {
-        return res.status(404).json({
-            msg: "Post con id " + id + " no encontrado"
-        })
-    }
-    return res.json({
-        data: post,
-    })
-}
-
+  const { id } = req.params; const post = await findPost(id);
+  if (!post) return res.status(404).json({ msg: "Post con id " + id + " no encontrado" });
+  return res.json({ data: post });
+};
 export const postPost = async (req: Request, res: Response) => {
-    const { body } = req
-
-    try {
-        await Post.sync()
-        body.createdAt = new Date()
-        body.updatedAt = new Date()
-        const response = await Post.create(body);
-        return res.status(201).json({
-            msg: response
-        })
-
-    } catch (error) {
-        res.status(500).json({
-            msg: 'Contecte con el administrador'
-        })
-    }
-}
-
+  try { return res.status(201).json({ msg: await createPost(req.body) }); }
+  catch (error) { return res.status(500).json({ msg: "Contecte con el administrador" }); }
+};
 export const putPost = async (req: Request, res: Response) => {
-    const { body } = req
-
-    try {
-        const postDb = await Post.findByPk(body.id)
-        console.log("body", body)
-        if (postDb) {
-            body.updatedAt = new Date()
-            postDb.set(body);
-            // postDb.update({
-            //     isActive: false
-            // }) para actualizar registros especificos 
-
-
-            await postDb.save();
-            return res.json({
-                src: 'post editado correctamente'
-            })
-        } else {
-            return res.status(409).json({
-                msg: 'Post con id ' + body.id + 'no exisete'
-            })
-        }
-
-    } catch (error) {
-        res.status(500).json({
-            msg: 'Contecte con el administrador',
-            error
-        })
-    }
-    res.json({
-        msg: 'postPost',
-        body
-    })
-}
-
-export const deletePost = (req: Request, res: Response) => {
-    const { id } = req.params
-    res.json({
-        msg: 'deletePost',
-        id
-    })
-}
-
+  try {
+    if (await updatePost(req.body)) return res.json({ src: "post editado correctamente" });
+    return res.status(409).json({ msg: "Post con id " + req.body.id + "no exisete" });
+  } catch (error) { return res.status(500).json({ msg: "Conecte con el administrador", error }); }
+};
+export const deletePost = (req: Request, res: Response) => res.json({ msg: "deletePost", id: req.params.id });
 export const getPostsByUsuario = async (req: Request, res: Response) => {
-    const { id } = req.params
-
-    try {
-        // Buscar todos los posts que pertenecen al usuario con id = usuarioId
-        const posts = await Post.findAll({
-            where: { usuarioId: id },
-            include: [
-                {
-                    model: Tema,
-                    through: { attributes: [] } // evita mostrar la tabla intermedia post_tema
-                }
-            ]
-        })
-
-        if (!posts || posts.length === 0) {
-            return res.status(404).json({
-                msg: "No se encontraron posts para el usuario con id " + id
-            })
-        }
-
-        return res.status(200).json({
-            data: posts
-        })
-    } catch (error) {
-        return res.status(500).json({
-            msg: "Conecte con el administrador",
-            error
-        })
-    }
-}
+  try {
+    const posts = await findPostsByUsuario(req.params.id);
+    if (!posts || posts.length === 0) return res.status(404).json({ msg: "No se encontraron posts para el usuario con id " + req.params.id });
+    return res.status(200).json({ data: posts });
+  } catch (error) { return res.status(500).json({ msg: "Conecte con el administrador", error }); }
+};
