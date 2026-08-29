@@ -11,6 +11,8 @@ const cwd = process.cwd()
 // Incluir rutas comunes: routes/ en root, archivos .ts en root, y dist compilado
 function norm(p: string) { return p.split(path.sep).join('/') }
 const apis = [
+  norm(path.join(cwd, 'src', 'docs', '**', '*.ts')),
+  norm(path.join(cwd, 'src', 'docs', '**', '*.js')),
   norm(path.join(cwd, 'routes', '*.ts')),
   norm(path.join(cwd, 'routes', '*.js')),
   norm(path.join(cwd, '*.ts')),

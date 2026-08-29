@@ -96,55 +96,6 @@ export const nasaStream = async (req: Request, res: Response, next: NextFunction
   
 }
 
-/**
- * @openapi
- * /api/utils/image-buffer:
- *   get:
- *     tags:
- *       - Utils
- *     summary: Obtener un buffer desde una imagen pública
- *     description: >
- *       Este endpoint consume la API gratuita de Picsum Photos (`https://picsum.photos/200/300`)
- *       para obtener una imagen aleatoria y convertirla en un Buffer.  
- *       Devuelve información básica del buffer, como su longitud y un fragmento en formato hexadecimal.
- *     responses:
- *       '200':
- *         description: Buffer generado exitosamente
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 length:
- *                   type: integer
- *                   example: 12345
- *                 slice:
- *                   type: string
- *                   description: Primeros bytes del buffer en formato hexadecimal
- *                   example: "ffd8ffe000104a464946"
- *       '502':
- *         description: La API de Picsum no devolvió datos válidos
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *             example:
- *               error: "La API de Picsum no devolvió datos válidos."
- *       '500':
- *         description: Error interno al procesar el buffer
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *             example:
- *               message: "Error en el proxy de buffer"
- */
 export const imageBuffer = async (req: Request, res: Response, next: NextFunction) => {
   try {
     // API pública de Picsum Photos
