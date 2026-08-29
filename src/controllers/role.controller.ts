@@ -1,41 +1,8 @@
-import { Request, Response } from "express"
-import { Role } from "../models/role.model"
-
-
-
-export const getRoles = async (req: Request, res: Response) => {
-
-    // await Post.sync()
-    const posts = await Role.findAll()
-    return res.status(200).json({
-        data: posts
-    })
-}
-
+import { Request, Response } from "express";
+import { findRoles, createRole } from "../repository/role.repository";
+export const getRoles = async (_req: Request, res: Response) => res.status(200).json({ data: await findRoles() });
 export const postRole = async (req: Request, res: Response) => {
-    const { body } = req
-
-    try {
-        await Role.sync()
-        body.createdAt = new Date()
-        body.updatedAt = new Date()
-        const response = await Role.create(body);
-        return res.status(201).json({
-            msg: response
-        })
-
-    } catch (error) {
-        res.status(500).json({
-            msg: 'Contecte con el administrador'
-        })
-    }
-}
-
-export const deleteRole = (req: Request, res: Response) => {
-    const { id } = req.params
-    res.json({
-        msg: 'deleteRole',
-        id
-    })
-}
-
+  try { return res.status(201).json({ msg: await createRole(req.body) }); }
+  catch (error) { return res.status(500).json({ msg: "Contecte con el administrador" }); }
+};
+export const deleteRole = (req: Request, res: Response) => res.json({ msg: "deleteRole", id: req.params.id });
