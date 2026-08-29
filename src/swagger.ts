@@ -16,9 +16,9 @@ const apis = [
   // norm(path.join(cwd, '*.ts')),
   // norm(path.join(cwd, '*.js')),
   // norm(path.join(cwd, 'dist', '**', '*.js')),
-  norm(path.join(cwd, './routes/**/*.ts',)),
-  norm(path.join(cwd, './controllers/**/*.ts',)),
-  norm(path.join(cwd, './models/**/*.ts')),
+  norm(path.join(cwd, './src/routes/**/*.ts',)),
+  norm(path.join(cwd, './src/controllers/**/*.ts',)),
+  norm(path.join(cwd, './src/models/**/*.ts')),
 
 
 ]
