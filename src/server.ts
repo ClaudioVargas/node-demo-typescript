@@ -1,4 +1,9 @@
+// dotenv primero: garantiza las variables de entorno aunque este módulo se
+// importe de forma aislada (p. ej. desde los tests).
+import 'dotenv/config'
+
 import express, { Application, NextFunction, Request, Response } from 'express'
+import { Server as HttpServer } from 'http'
 
 import authRoutes from './routes/auth.router'
 import userRoutes from './routes/usuario.router'
@@ -22,7 +27,6 @@ const GoogleStrategy = passportGoogle.Strategy;
 
 import session from 'express-session'
 
-import 'dotenv/config'
 import { ApiError } from './validators/apiError'
 import { authJwt } from './validators/authJwt'
 import { errorHandler } from './validators/errorHandler'
@@ -43,12 +47,20 @@ class Server {
 
     private passport: any
 
+    // Conexión a la BD iniciada en el constructor. Guardamos la promesa para
+    // esperarla en `start()` antes de escuchar; el reintento de manejo evita
+    // "unhandled rejection" y permite propagar el fallo de forma controlada.
+    private dbReady: Promise<void>
+    private dbError?: Error
+
     constructor() {
         this.app = express();
         this.port = process.env.PORT || '8000'
-        this.dbConnection()
+        this.dbReady = this.dbConnection().catch((error: Error) => {
+            this.dbError = error
+        })
         // OAutn2
-        this.app.use(session({ secret: 'cats', resave: false, saveUninitialized: true }))
+        this.app.use(session({ secret: process.env.SESSION_SECRET || 'cats', resave: false, saveUninitialized: true }))
         this.app.use(passport.initialize())
         this.app.use(passport.session())
         this.middlewares()
@@ -134,19 +146,37 @@ class Server {
         req.user ? next() : res.sendStatus(401)
     }
 
-    listen() {
-        this.app.listen(this.port, () => {
+    /**
+     * Arranque completo: espera a que la BD esté disponible y luego escucha.
+     * Devuelve el http.Server para poder gestionar el apagado elegante.
+     */
+    async start(): Promise<HttpServer> {
+        await this.ensureDbConnected()
+        return this.listen()
+    }
+
+    async ensureDbConnected(): Promise<void> {
+        if (this.dbError) throw this.dbError
+        await this.dbReady
+    }
+
+    getPort(): string {
+        return this.port
+    }
+
+    listen(): HttpServer {
+        const httpServer = this.app.listen(this.port, () => {
             console.info("Servidor corriendo en puerto !!", +this.port)
             db.models.Tema.sync({ alter: false })
             db.models.Usuario.sync({ alter: false })
             db.models.Post.sync({ alter: false })
         })
+        return httpServer
     }
 
     middlewares() {
         // cors
-        // this.app.use(cors())
-        cors({
+        this.app.use(cors({
             origin: [
                 "http://localhost:8000", // Swagger UI
                 "http://localhost:5173" // react local
@@ -154,7 +184,7 @@ class Server {
             methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             allowedHeaders: ["Content-Type", "Authorization"],
             credentials: true, // permite enviar cookies/autenticación si usas JWT en headers
-        })
+        }))
         // security headers
         this.app.use(helmet())
 

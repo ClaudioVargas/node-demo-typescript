@@ -8,11 +8,15 @@ jest.mock('express', () => {
   const mApp = {
     use: jest.fn(),
     get: jest.fn(),
+    post: jest.fn(),
     listen: jest.fn((port, cb) => cb && cb()),
   };
   const mExpress = jest.fn(() => mApp);
   (mExpress as any).json = jest.fn(() => 'json-middleware');
   (mExpress as any).static = jest.fn(() => 'static-middleware');
+  (mExpress as any).Router = jest.fn(() => ({
+    use: jest.fn(), get: jest.fn(), post: jest.fn(), put: jest.fn(), delete: jest.fn(),
+  }));
   return mExpress;
 });
 
@@ -25,7 +29,7 @@ jest.mock('passport', () => ({
   authenticate: jest.fn(() => (req: any, res: any, next: any) => next()),
 }));
 
-jest.mock('../db/connection', () => ({
+jest.mock('../src/db/connection', () => ({
   authenticate: jest.fn(() => Promise.resolve()),
   models: {
     Tema: { sync: jest.fn(() => Promise.resolve()) },
@@ -37,10 +41,13 @@ jest.mock('../db/connection', () => ({
 jest.mock('cors', () => jest.fn(() => 'cors-middleware'));
 jest.mock('express-session', () => jest.fn(() => 'session-middleware'));
 
-// Mocks para las rutas internas
-jest.mock('../routes/usuario.router', () => 'usuario-router');
-jest.mock('../routes/post.router', () => 'post-router');
-jest.mock('../routes/tema.router', () => 'tema-router');
+// Mocks para las rutas internas (evita cargar controllers/sequelize reales)
+jest.mock('../src/routes/auth.router', () => 'auth-router');
+jest.mock('../src/routes/role.router', () => 'role-router');
+jest.mock('../src/routes/stream.router', () => 'stream-router');
+jest.mock('../src/routes/usuario.router', () => 'usuario-router');
+jest.mock('../src/routes/post.router', () => 'post-router');
+jest.mock('../src/routes/tema.router', () => 'tema-router');
 
 describe('Clase Server', () => {
   let server: Server;

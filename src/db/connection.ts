@@ -5,12 +5,34 @@ import { Tema } from '../models/tema.model';
 import { UsuarioTema } from '../models/usuarioTemas.model';
 import { Role } from '../models/role.model';
 
-const db = new Sequelize('prueba_db', 'root', '1234', {
-    host:'localhost',
-    dialect: 'mysql',
-    models: [Usuario, Post, Tema, UsuarioTema, Role]
-    // logging: false
-})
+const db = new Sequelize(
+    process.env.DB_NAME || 'prueba_db',
+    process.env.DB_USER || 'root',
+    process.env.DB_PASSWORD || '1234',
+    {
+        host: process.env.DB_HOST || 'localhost',
+        port: toInt(process.env.DB_PORT, 3306),
+        dialect: 'mysql',
+        models: [Usuario, Post, Tema, UsuarioTema, Role],
+        // Pool de conexiones: el número máximo de conexiones está acotado por
+        // worker. Si usas cluster (WEB_CONCURRENCY > 1), el total de conexiones
+        // abiertas en la BD será aproximadamente workers * max.
+        pool: {
+            max: toInt(process.env.DB_POOL_MAX, 10),
+            min: toInt(process.env.DB_POOL_MIN, 0),
+            idle: toInt(process.env.DB_POOL_IDLE_MS, 10_000),
+            acquire: toInt(process.env.DB_POOL_ACQUIRE_MS, 30_000),
+            evict: toInt(process.env.DB_POOL_EVICT_MS, 60_000),
+        },
+        logging: process.env.DB_LOGGING === 'true' ? console.log : false,
+    }
+)
+
+/** Convierte una variable de entorno a entero; si no es válida usa el default. */
+function toInt(value: string | undefined, fallback: number): number {
+    const parsed = Number.parseInt(value ?? '', 10)
+    return Number.isNaN(parsed) ? fallback : parsed
+}
 
 async function inicializarBaseDatos() {
   try {

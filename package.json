@@ -5,9 +5,10 @@
   "main": "dist/app.js",
   "scripts": {
     "build": "tsc",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "start": "node dist/app.js",
     "dev": "npx tsx --watch src/app.ts",
-    "test": "jest --runInBand"
+    "test": "jest --runInBand --config jest.config.js"
   },
   "keywords": [],
   "author": "",
@@ -48,17 +49,5 @@
     "passport-local": "^1.0.0",
     "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1"
-  },
-  "jest": {
-    "preset": "ts-jest",
-    "testEnvironment": "node",
-    "moduleFileExtensions": [
-      "ts",
-      "js",
-      "json"
-    ],
-    "testMatch": [
-      "**/tests/**/*.test.(ts|js)"
-    ]
   }
 }
