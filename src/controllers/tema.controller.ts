@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
 import { findTemas, findTema, createTema, updateTema } from "../repository/tema.repository";
-export const getTemas = async (_req: Request, res: Response) => res.status(200).json({ data: await findTemas() });
+export const getTemas = async (_req: Request, res: Response) => res.status(200).json(await findTemas());
 export const getTema = async (req: Request, res: Response) => {
   const { id } = req.params; const tema = await findTema(id);
   if (!tema) return res.status(404).json({ msg: "Tema con id " + id + " no encontrado" });
-  return res.json({ data: tema });
+  return res.json(tema);
 };
 export const postTema = async (req: Request, res: Response) => {
   try {

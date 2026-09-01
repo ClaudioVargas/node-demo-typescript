@@ -28,7 +28,12 @@ export async function logout(req: Request, res: Response, next: NextFunction) {
     return res.json({ ok: true });
   } catch (err) { next(err); }
 }
-export async function hashPasswordTest(_req: Request, res: Response, next: NextFunction) {
-  try { return res.json({ ok: true, hash: hashPassword("111111") }); }
+export async function hashPasswordTest(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { password } = req.params;
+    if (!password) return next(new ApiError(400, "password required"));
+    const hash = await hashPassword(password);
+    return res.json({ ok: true, hash}); 
+  }
   catch (err) { next(err); }
 }

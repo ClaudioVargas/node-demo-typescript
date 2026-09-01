@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
 import { findUsuarios, findUsuario, createUsuario, likeTema, updateUsuario } from "../repository/usuario.repository";
 
-export const getUsuarios = async (_req: Request, res: Response) => res.status(200).json({ data: await findUsuarios() });
+export const getUsuarios = async (_req: Request, res: Response) => res.status(200).json(await findUsuarios());
 export const getUsuario = async (req: Request, res: Response) => {
   const { id } = req.params; const usuario = await findUsuario(id);
   if (!usuario) return res.status(404).json({ msg: "Usuario con id " + id + " no encontrado" });
-  return res.json({ data: usuario });
+  return res.json(usuario);
 };
 export const postUsuario = async (req: Request, res: Response) => {
   try {

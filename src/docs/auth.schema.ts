@@ -66,22 +66,49 @@
 
 /**
  * @openapi
- * /api/auth/hashPassword:
+ * /api/auth/hashPassword/{password}:
  *   get:
  *     tags:
  *       - Utils
  *     summary: Generar un hash de prueba
  *     description: >
  *       Este endpoint ejecuta la función `hashPasswordTest` y devuelve un string con un hash
- *       generado de forma interna. No recibe parámetros en la petición.
+ *       generado a partir del parámetro `password` recibido en la URL.
+ *     parameters:
+ *       - name: password
+ *         in: path
+ *         required: true
+ *         description: Cadena de texto que se desea hashear
+ *         schema:
+ *           type: string
+ *           example: "MiClave123"
  *     responses:
  *       '200':
  *         description: Hash generado exitosamente
  *         content:
  *           application/json:
  *             schema:
- *               type: string
- *               example: "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3"
+ *               type: object
+ *               properties:
+ *                 ok:
+ *                   type: boolean
+ *                   example: true
+ *                 hash:
+ *                   type: string
+ *                   example: "$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36Y3Fz6lYz8QZcQ9lFh1ZyW"
+ *       '400':
+ *         description: Parámetro faltante o inválido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 ok:
+ *                   type: boolean
+ *                   example: false
+ *                 msg:
+ *                   type: string
+ *                   example: "Debe enviar un parámetro 'password'"
  *       '500':
  *         description: Error interno al generar el hash
  *         content:
@@ -93,3 +120,4 @@
  *                   type: string
  *                   example: "Error al generar hash"
  */
+
