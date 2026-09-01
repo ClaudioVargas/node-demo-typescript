@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { signup as createAccount, login as authenticate, logout as invalidateToken, hashPassword } from "../repository/auth.repository";
 import { ApiError } from "../validators/apiError";
 
-export async function signup(req: Request, res: Response, next: NextFunction) {
+export const signup = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { name, email, password } = req.body || {};
     if (!name || !email || !password) return next(new ApiError(400, "name, email and password required"));
@@ -11,7 +11,7 @@ export async function signup(req: Request, res: Response, next: NextFunction) {
     return res.status(201).json({ id: user.id, name: user.name, email: user.email });
   } catch (err) { next(err); }
 }
-export async function login(req: Request, res: Response, next: NextFunction) {
+export const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password } = req.body || {};
     if (!email || !password) return next(new ApiError(400, "email and password required"));
@@ -20,7 +20,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
     return res.json({ token });
   } catch (err) { next(err); }
 }
-export async function logout(req: Request, res: Response, next: NextFunction) {
+export const logout = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const auth = req.headers.authorization;
     if (!auth || !auth.startsWith("Bearer ")) return next(new ApiError(400, "No token provided"));
@@ -28,7 +28,7 @@ export async function logout(req: Request, res: Response, next: NextFunction) {
     return res.json({ ok: true });
   } catch (err) { next(err); }
 }
-export async function hashPasswordTest(req: Request, res: Response, next: NextFunction) {
+export const hashPasswordTest = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { password } = req.params;
     if (!password) return next(new ApiError(400, "password required"));

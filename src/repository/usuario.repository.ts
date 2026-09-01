@@ -1,4 +1,4 @@
-import bcrypt from "bcrypt";
+import { hashPassword } from "./auth.repository";
 import { Usuario } from "../models/usuario.model";
 import { UsuarioTema } from "../models/usuarioTemas.model";
 import { Tema } from "../models/tema.model";
@@ -9,7 +9,10 @@ export const findUsuario = (id: string) => Usuario.findByPk(id);
 export async function createUsuario(body: any) {
   await Usuario.sync({ alter: true });
   if (await Usuario.findOne({ where: { email: body.email } })) return null;
-  const hashedPassword = await bcrypt.hash(body.password, 16);
+  // Mismo esquema de hashing (PBKDF2, formato `salt$derived`) que usa el login
+  // en auth.repository.ts; así las contraseñas de usuarios creados aquí son
+  // verificables al iniciar sesión.
+  const hashedPassword = hashPassword(body.password);
   return Usuario.create({ ...body, password: hashedPassword, createdAt: new Date(), updatedAt: new Date() } as any);
 }
 
@@ -27,6 +30,9 @@ export async function likeTema(body: any) {
 export async function updateUsuario(body: any) {
   const usuario = await Usuario.findByPk(body.id);
   if (!usuario) return false;
+  // Si el update incluye password, hashearla con el mismo esquema del login
+  // para no guardar una contraseña en texto plano ni en formato incompatible.
+  if (body.password) body.password = hashPassword(body.password);
   body.updatedAt = new Date();
   usuario.set(body);
   await usuario.save();
