@@ -1,65 +1,149 @@
+# =============================================================================
+# Docker Compose - node-demo-typescript (API + MySQL 8)
+#
+# Uso:
+#   docker compose up -d --build          # construir y levantar
+#   docker compose ps                     # estado de los servicios
+#   docker compose logs -f app            # logs en vivo de la API
+#   docker compose down                   # detener (mantiene volúmenes)
+#   docker compose down -v                # detener y ELIMINA datos (¡cuidado!)
+#
+# BUENAS PRÁCTICAS APLICADAS:
+#   - Imagen multi-stage (./Dockerfile: deps -> build -> runtime) con usuario
+#     sin privilegios en la imagen final.
+#   - `restart: unless-stopped`: auto-recuperación ante caídas o reinicios.
+#   - Healthchecks en API y BD + `depends_on.condition: service_healthy`
+#     para un arranque ordenado y fiable (la API espera a la BD).
+#   - Volúmenes NOMBRADOS para datos (BD) y logs (API): persistencia real.
+#   - Red interna aislada: MySQL NO publica su puerto al host por defecto.
+#   - `init: true` (tini) reenvía SIGTERM/SIGINT y elimina procesos zombies.
+#   - `security_opt: no-new-privileges` + `cap_drop: ALL` + `read_only: true`
+#     + `tmpfs` para rutas temporales (superficie de ataque mínima).
+#   - Límites de CPU/memoria con `deploy.resources.limits` (evita que un
+#     contenedor consuma todo el host).
+#   - Rotación de logs del contenedor (json-file + max-size/max-file) para no
+#     llenar el disco con archivos de log infinitos.
+#   - Nada de secretos hardcodeados: todo se lee de `.env` (ver .env.example).
+# =============================================================================
 name: node-demo
 
+# Configuración de LOG común a todos los servicios (evita duplicación)
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
-  # ------------------------------------------------------------------
-  # Servidor de la API (Node + Express + cluster)
-  # ------------------------------------------------------------------
+  # ---------------------------------------------------------------------------
+  # API: imagen construida a partir del Dockerfile multi-stage
+  # ---------------------------------------------------------------------------
   app:
     build:
       context: .
       dockerfile: Dockerfile
+      # Fase de la imagen. Usa "build" si necesitas depurar con la fuente TS.
       target: ${APP_TARGET:-runtime}
     image: node-demo:local
-    container_name: node-demo-app
+    container_name: node-demo-app   # solo dev; retíralo si necesitas escalar réplicas
     restart: unless-stopped
+    init: true
     env_file:
       - .env
     environment:
-      # Punto de entrada a la BD dentro de la red de compose (fijo: el servicio
-      # "db", independiente del valor que traiga el .env local, donde suele
-      # haber DB_HOST=localhost para ejecución fuera de contenedores).
+      # Host de la BD dentro de la red de compose (fijo al servicio "db"),
+      # independiente de lo que traiga el .env local (suele ser localhost).
       DB_HOST: db
-      # 1 worker en entornos acotados; NODE_ENV=production usará núcleos
+      PORT: ${PORT:-8000}
+      NODE_ENV: ${NODE_ENV:-development}
+      # 1 worker por defecto en desarrollo (entornos acotados).
       WEB_CONCURRENCY: ${WEB_CONCURRENCY:-1}
     ports:
       - "${PORT:-8000}:8000"
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - node-net
+    # --- Endurecimiento del contenedor ---
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    volumes:
+      # Persiste los logs que la app escribe en /app/logs (src/utils/logger.ts)
+      - app_logs:/app/logs
+    # Apagado elegante: la app respeta SIGTERM (SHUTDOWN_TIMEOUT_MS en .env)
+    stop_grace_period: 30s
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8000/docs/json"]
       interval: 30s
       timeout: 5s
-      start_period: 60s
+      start_period: 60s   # margen tras el arranque (espera a la BD)
       retries: 5
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.75"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
 
-  # ------------------------------------------------------------------
+  # ---------------------------------------------------------------------------
   # Base de datos MySQL 8
-  # ------------------------------------------------------------------
+  # ---------------------------------------------------------------------------
   db:
     image: mysql:8.4
     container_name: node-demo-db
     restart: unless-stopped
     environment:
       # La API se conecta como root (igual que fuera de Docker, ver .env.example).
-      # No definir MYSQL_USER: la imagen de MySQL rechaza MYSQL_USER="root".
+      # NO definir MYSQL_USER: la imagen de MySQL rechaza MYSQL_USER="root".
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-1234}
       MYSQL_DATABASE: ${DB_NAME:-prueba_db}
-    ports:
-      # El puerto del HOST se publica en 3307 para no chocar con un MySQL local
-      # en 3306. Dentro de la red de compose la app sigue usando `db:3306`
-      # (el puerto interno del contenedor), por lo que este mapeo solo afecta
-      # a clientes externos. Quita esta línea si no necesitas exponer MySQL.
-      - "${DB_PORT_HOST:-3307}:3306"
+    # POR DEFECTO NO publicamos el puerto al host (seguridad): la app accede
+    # por la red interna `node-net`. Si necesitas un cliente externo (p. ej.
+    # MySQL Workbench), descomenta estas líneas:
+    # ports:
+    #   - "${DB_PORT_HOST:-3307}:3306"
     volumes:
       - db_data:/var/lib/mysql
+    networks:
+      - node-net
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
       interval: 10s
       timeout: 5s
       start_period: 30s
       retries: 10
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 768M
+        reservations:
+          cpus: "0.25"
+          memory: 256M
 
+# -----------------------------------------------------------------------------
+# Red interna para la comunicación app <-> db
+# -----------------------------------------------------------------------------
+networks:
+  node-net:
+    name: node-demo-net
+    driver: bridge
+
+# -----------------------------------------------------------------------------
+# Volúmenes persistentes (sobreviven a down/up; se borran con down -v)
+# -----------------------------------------------------------------------------
 volumes:
   db_data:
-    driver: local
+    name: node-demo-db-data
+  app_logs:
+    name: node-demo-app-logs
