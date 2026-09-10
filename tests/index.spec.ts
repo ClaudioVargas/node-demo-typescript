@@ -31,6 +31,7 @@ jest.mock('passport', () => ({
 
 jest.mock('../src/db/connection', () => ({
   authenticate: jest.fn(() => Promise.resolve()),
+  sync: jest.fn(() => Promise.resolve()),
   models: {
     Tema: { sync: jest.fn(() => Promise.resolve()) },
     Usuario: { sync: jest.fn(() => Promise.resolve()) },
@@ -86,9 +87,7 @@ describe('Clase Server', () => {
   test('debería iniciar el servidor y sincronizar los modelos de la base de datos', () => {
     server.listen();
     expect(mockApp.listen).toHaveBeenCalled();
-    expect(db.models.Tema.sync).toHaveBeenCalledWith({ alter: false });
-    expect(db.models.Usuario.sync).toHaveBeenCalledWith({ alter: false });
-    expect(db.models.Post.sync).toHaveBeenCalledWith({ alter: false });
+    expect(db.sync).toHaveBeenCalledWith({ alter: false });
   });
 
   // Test del Middleware personalizado isLoggerIn

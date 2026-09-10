@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { findTemas, findTema, createTema, updateTema } from "../repository/tema.repository";
+import { findTemas, findTema, createTema, updateTema, deleteTema } from "../repository/tema.repository";
 export const getTemas = async (_req: Request, res: Response) => res.status(200).json(await findTemas());
 export const getTema = async (req: Request, res: Response) => {
   const { id } = req.params; const tema = await findTema(id);
@@ -19,4 +19,10 @@ export const putTema = async (req: Request, res: Response) => {
     return res.status(409).json({ msg: "Tema con id " + req.body.id + "no exisete" });
   } catch (error) { return res.status(500).json({ msg: "Contecte con el administrador", error }); }
 };
-export const deleteTema = (req: Request, res: Response) => res.json({ msg: "deleteTema", id: req.params.id });
+
+export const eliminarTema = async (req: Request, res: Response) => {
+  try {
+    if (await deleteTema(req.params.id)) return res.json({ src: "usuario eliminado correctamente" });
+    return res.status(409).json({ msg: "Usuario con id " + req.body.id + "no exisete" });
+  } catch (error) { return res.status(500).json({ msg: "Contecte con el administrador", error }); }
+}

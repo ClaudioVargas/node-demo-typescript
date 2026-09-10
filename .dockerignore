@@ -1,0 +1,32 @@
+# Dependencias (se reinstalan dentro del contenedor)
+node_modules
+
+# Compilado (se genera dentro del contenedor con `npm run build`)
+dist
+
+# Entornos / secretos (¡NUNCA copiar datos locales de configuración!)
+.env
+.env.local
+.env.staging
+.env.production
+
+# Repositorio y control de versiones
+.git
+.gitignore
+.github
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Sistemas operativos
+.DS_Store
+Thumbs.db
+
+# IDE / editor
+.vscode
+.idea
+
+# Documentación / archivos pesados
+README.md

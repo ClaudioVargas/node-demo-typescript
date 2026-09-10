@@ -1,0 +1,70 @@
+name: node-demo-prod
+
+# =============================================================================
+# Despliegue de PRODUCCIÓN con `docker compose -f compose.prod.yaml up -d`
+# =============================================================================
+# - NO publica el puerto de MySQL (solo accesible por la red interna).
+# - Usa la fase `runtime` de la imagen (sin tipos/fuentes/devDeps).
+# - Espera a que la BD esté sana antes de arrancar la API (healthcheck).
+#
+# OJO: esta plantilla NO sustituye a un orquestador real (K8s/Swarm). Para
+# usarla en un host único (VPS) crea primero la red externa `traefik`:
+#   docker network create traefik
+# y levanta el proxy reverso (Caddy/Traefik/nginx) apuntando al servicio `app`.
+# =============================================================================
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAME:-claudiovargas/node-demo-typescript}:${IMAGE_TAG:-latest}
+    container_name: node-demo-app-prod
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
+      NODE_ENV: production
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-2}
+    ports:
+      # Solo necesario si no usas proxy reverso (expón 8000 al exterior).
+      - "${PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app_net
+      - traefik
+
+  db:
+    image: mysql:8.4
+    container_name: node-demo-db-prod
+    restart: unless-stopped
+    environment:
+      # La API se conecta como root (igual que fuera de Docker, ver .env.example).
+      # No definir MYSQL_USER: la imagen de MySQL rechaza MYSQL_USER="root".
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME:-prueba_db}
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 10
+    networks:
+      - app_net
+
+# Red para el proxy reverso (debe existir: `docker network create traefik`)
+networks:
+  app_net:
+    driver: bridge
+  traefik:
+    external: true
+
+volumes:
+  db_data:
+    driver: local

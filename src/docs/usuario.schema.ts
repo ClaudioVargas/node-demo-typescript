@@ -31,6 +31,18 @@
  *         email:
  *           type: string
  *           example: "juan@example.com"
+ *     UpdateUsuario:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *           example: 1
+ *         name:
+ *           type: string
+ *           example: "Juan"
+ *         roleId:
+ *           type: integer
+ *           example: 2
  */
 
 /**
@@ -141,7 +153,8 @@
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Usuario'
+ *             $ref: '#/components/schemas/UpdateUsuario'
+ *              
  *     responses:
  *       '200':
  *         description: Usuario actualizado

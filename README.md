@@ -73,7 +73,15 @@ node-demo-typescript/
 │   ├── interfaces/                  # Tipos compartidos (UpdateUsuarioRequest)
 │   └── validators/                  # authJwt, errorHandler, ApiError, tokenBlacklist, validators
 ├── tests/                           # Suites de Jest (index.spec.ts, utils.test.ts)
-├── .env.example                     # Plantilla de variables de entorno
+├── .env.example                     # Plantilla de variables de entorno (commitada)
+├── .github/workflows/               # Pipelines CI/CD (estrategia Push / CIOps)
+│   ├── ci-cd-push.yml               # Push a develop/main/tag → tests + imagen GHCR
+│   └── deploy.yml                   # Despliegue manual del artefacto publicado
+├── Dockerfile                       # Imagen multi-stage (base → build → runtime)
+├── .dockerignore                    # Excluye node_modules, dist, .env, .git del build
+├── compose.yaml                     # Stack local: API + MySQL 8
+├── compose.prod.yaml                # Plantilla de producción (red interna + proxy)
+├── Makefile                         # Atajos para Docker (make up, make test, ...)
 ├── jest.config.js                   # Configuración de Jest (única fuente de verdad)
 ├── package.json
 └── tsconfig.json
@@ -404,6 +412,108 @@ Notas de configuración (ya resueltas):
    `MemoryStore` de sesiones por **Redis** cuando el despliegue sea multi-proceso
    o multi-instancia.
 
+### Docker
+
+El proyecto incluye contenedorización completa para desarrollo y producción:
+
+| Archivo             | Propósito                                                        |
+| ------------------- | ---------------------------------------------------------------- |
+| `Dockerfile`        | Imagen **multi-stage** (`base` → `build` → `runtime`) con Node 24 |
+| `.dockerignore`     | Excluye `node_modules`, `dist`, `.env`, `.git`, etc. del build    |
+| `compose.yaml`      | Stack local: **API + MySQL 8** con healthchecks y volumen de BD   |
+| `compose.prod.yaml` | Plantilla de producción: red interna, sin publicar MySQL, imagen OCI |
+
+**Flujo multi-stage del Dockerfile:**
+
+```text
+base   (node:24-alpine)  → npm ci + copia tsconfig.json
+build  (base)            → compila TypeScript → dist/
+runtime(node:24-alpine)  → npm ci --omit=dev + dist/ + usuario sin root
+```
+
+**Levantar en local (desarrollo):**
+
+```bash
+# 1. Crea tu .env a partir de la plantilla (commitada)
+copy .env.example .env
+
+# 2. Construye y arranca API + MySQL
+docker compose up -d --build
+
+# 3. Comprueba el estado
+docker compose ps
+docker compose logs -f app
+```
+
+La API queda disponible en `http://localhost:8000` (docs en `/docs`). Compose
+echa un vistazo a tu `.env` para las credenciales de BD y sobrescribe
+`DB_HOST=db` automáticamente dentro de la red.
+
+**Producción (host único, sin orquestador):**
+
+```bash
+# Crea la red para el proxy reverso (solo la primera vez)
+docker network create traefik
+
+# Variables del deploy (ajústalas o usa el .env)
+export REGISTRY=ghcr.io
+export IMAGE_NAME=claudiovargas/node-demo-typescript
+export IMAGE_TAG=1.2.3
+export DB_PASSWORD='secreto-muy-largo'
+
+docker compose -f compose.prod.yaml up -d --build
+```
+
+> ⚠️ `compose.prod.yaml` no sustituye a un orquestador real (K8s/Swarm); espera
+> un proxy reverso (Caddy/Traefik/nginx) en la red externa `traefik` y no
+> publica MySQL al exterior.
+
+## CI/CD — Estrategia Push (CIOps)
+
+El repo dispone de pipelines en `.github/workflows/` que implementan la
+**estrategia Push**: el CI se dispara exclusivamente por **`push`** a
+`develop`/`main` (o un tag `v*`), y cada commit que pasa las pruebas publica
+automáticamente un artefacto (la imagen OCI) listo para desplegar.
+
+### Workflows
+
+| Workflow           | Trigger                       | Qué hace                                                              |
+| ------------------ | ----------------------------- | --------------------------------------------------------------------- |
+| `ci-cd-push.yml`   | Push a `develop`, `main` o tag `v*` | 1) Tests (Node 20/22/24) → 2) Build Docker → 3) **Smoke test E2E (Docker + MySQL)** → 4) Push a GHCR |
+| `deploy.yml`       | Manual (`workflow_dispatch`)  | Despliega la imagen ya publicada a un entorno (plantilla SSH/K8s)     |
+
+### Publicación en GHCR (GitHub Container Registry)
+
+El job `docker-build` usa `docker/metadata-action` para generar los tags de la
+imagen según el evento:
+
+| Evento        | Etiquetas publicadas en `ghcr.io/<usuario>/node-demo-typescript` |
+| ------------- | ---------------------------------------------------------------- |
+| Rama `develop`| `develop`, `latest` (solo si `main`)                              |
+| Rama `main`   | `main`, `latest`                                                  |
+| Tag `v1.2.3`  | `1.2.3`, `1.2`, `latest` (si es la default)                       |
+
+El push a GHCR usa el permiso `packages: write` con el `GITHUB_TOKEN`
+automático de GitHub Actions; si publicas el paquete como **privado**, recuerda
+añadir al contenedor/producto consumidor el token con `read:packages`.
+
+### Despliegue (CIOps)
+
+El pipeline **no despliega en producción automáticamente**: publica el
+artefacto y lo deja listo. El despliegue se lanza desde
+**Actions → Despliegue manual** (o mediante un runner/CD externo que lea la
+imagen de GHCR). La rama `develop` queda lista para entornos de staging y un tag
+`v*` para producción. Esto sigue la práctica **CIOps**: el artefacto (imagen)
+es el único resultado del CI/CD y el despliegue es reproducible a partir de él.
+
+### Ejecutar manualmente en local todo lo que hace el CI
+
+```bash
+npm ci && npm run build && npm test
+docker compose build
+docker compose up -d
+```
+
 ## Limitaciones conocidas
 
 - **Blacklist de tokens en memoria** (`tokenBlacklist.ts`): no compartida entre
@@ -446,6 +556,21 @@ Este repositorio fue revisado y ajustado recientemente. Los cambios principales:
    `tests/**/*.{spec,test}.ts`, aviso TS151002 silenciado, y mocks corregidos en
    `tests/index.spec.ts` (rutas `../src/...`).
 7. **Documentación**: este `README.md` y la plantilla `.env.example`.
+
+### Docker + CI/CD (añadido)
+
+8. **Contenedorización**: `Dockerfile` multi-stage (deps → build → runtime), `.dockerignore`,
+   `compose.yaml` (API + MySQL 8 con healthchecks) y `compose.prod.yaml` (plantilla de
+   producción con red externa para proxy reverso).
+9. **CI/CD Push (CIOps)**: `.github/workflows/ci-cd-push.yml` ejecuta tests multi-versión,
+   build de la imagen con caché, **smoke test E2E (Docker + MySQL)** y publica la imagen
+   en GHCR (`packages: write`). `.github/workflows/deploy.yml` permite el despliegue
+   manual del artefacto publicado.
+10. **Arranque sobre BD vacía**: `src/server.ts` ahora usa `db.sync({ alter: false })`
+    (en vez de `sync()` individuales de Tema/Usuario/Post) que respeta el orden de las
+    FK — antes fallaba con `ER_FK_CANNOT_OPEN_PARENT` creando `Usuarios` antes que
+    `Roles`, lo que derribaba el contenedor (unhandled rejection). El `.catch` evita
+    que un fallo de sincronización mate al worker.
 
 ---
 

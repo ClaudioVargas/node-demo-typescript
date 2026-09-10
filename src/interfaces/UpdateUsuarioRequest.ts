@@ -1,5 +1,6 @@
 export interface UpdateUsuarioRequest {
   id: number;
   name?: string;
-  email?: string;
+  // email?: string;
+  roleId?: number;
 }

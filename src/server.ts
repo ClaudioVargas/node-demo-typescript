@@ -167,9 +167,18 @@ class Server {
     listen(): HttpServer {
         const httpServer = this.app.listen(this.port, () => {
             console.info("Servidor corriendo en puerto !!", +this.port)
-            db.models.Tema.sync({ alter: false })
-            db.models.Usuario.sync({ alter: false })
-            db.models.Post.sync({ alter: false })
+            // Sincroniza TODOS los modelos (incl. Role/UsuarioTema) en el orden
+            // correcto respetando las FK: los sync individuales (Tema, Usuario,
+            // Post) fallaban al crear `Usuarios` antes que `Roles`
+            // (ER_FK_CANNOT_OPEN_PARENT) al desplegar sobre una BD vacía.
+            // `db.sync()` calcula el orden topológico de las asociaciones.
+            // El `.catch` evita un "unhandled rejection" que derribaría el
+            // proceso (los workers del cluster deben mantenerse vivos).
+            db.sync({ alter: false })
+                .then(() => console.info("[db] Modelos sincronizados correctamente"))
+                .catch((error) =>
+                    console.error("[db] No se pudieron sincronizar los modelos:", error)
+                )
         })
         return httpServer
     }

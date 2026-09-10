@@ -63,6 +63,37 @@
 /**
  * @openapi
  * /api/tema/{id}:
+ *   put:
+ *     summary: Actualizar un tema
+ *     tags: [Temas]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID del tema
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nombre:
+ *                 type: string
+ *               descripcion:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Tema actualizado exitosamente
+ *       400:
+ *         description: Datos inválidos
+ */
+
+/**
+ * @openapi
+ * /api/tema/{id}:
  *   delete:
  *     summary: Eliminar un tema por ID
  *     tags: [Temas]

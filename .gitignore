@@ -1,7 +1,14 @@
+# Dependencias y build
 node_modules
 /dist
+/logs
+# IDE / editor
 .vscode/*
+
+# Entornos locales (¡NUNCA commitear!)
 .env
-.env.example
 .env.local
 .env.staging
+.env.production
+.env.docker
+!.env.example

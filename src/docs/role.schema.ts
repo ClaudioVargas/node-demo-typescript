@@ -1,7 +1,7 @@
 /**
  * @openapi
  * tags:
- *   name: Role
+ *   name: Roles
  *   description: Gestión de roles
  */
 
@@ -36,6 +36,37 @@
  *     responses:
  *       201:
  *         description: Role creada exitosamente
+ *       400:
+ *         description: Datos inválidos
+ */
+
+/**
+ * @openapi
+ * /api/role:
+ *   put:
+ *     summary: Actualizar un role existente
+ *     tags: [Roles]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID del role
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nombre:
+ *                 type: string
+ *               descripcion:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Role actualizada exitosamente
  *       400:
  *         description: Datos inválidos
  */

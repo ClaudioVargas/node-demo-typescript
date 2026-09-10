@@ -1,0 +1,59 @@
+name: Despliegue manual
+
+# Workflow opcional para aplicar la estrategia CIOps:
+# cuando pasa un `tag` o la rama `main`, puedes lanzar manualmente el despliegue
+# de la imagen ya publicada en GHCR hacia tu servidor (SSH, K8s, etc.).
+#
+# Uso sugerido en la pestaña Actions -> "Despliegue manual".
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Entorno destino del despliegue"
+        required: true
+        default: production
+        type: choice
+        options:
+          - production
+          - staging
+      image_tag:
+        description: "Tag de la imagen (por defecto 'latest')"
+        required: false
+        default: "latest"
+        type: string
+
+concurrency:
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Notificar artefacto a desplegar
+        run: |
+          echo "Desplegando imagen → ghcr.io/${{ github.repository }}:${{ inputs.image_tag }}"
+          echo "Entorno → ${{ inputs.environment }}"
+
+      # Ejemplo con SSH: descomenta y completa con el SECRET `SSH_PRIVATE_KEY`
+      # que apuntas a tu servidor.
+      # - name: Deploy via SSH
+      #   uses: appleboy/ssh-action@v1.0.3
+      #   with:
+      #     host: ${{ secrets.SSH_HOST }}
+      #     username: ${{ secrets.SSH_USER }}
+      #     key: ${{ secrets.SSH_PRIVATE_KEY }}
+      #     script: |
+      #       export IMAGE_TAG=${{ inputs.image_tag }}
+      #       docker logout ghcr.io && echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      #       docker pull ghcr.io/${{ github.repository }}:$$IMAGE_TAG
+      #       docker compose -f compose.prod.yaml up -d --no-build

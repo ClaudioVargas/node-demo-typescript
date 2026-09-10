@@ -1,0 +1,65 @@
+name: node-demo
+
+services:
+  # ------------------------------------------------------------------
+  # Servidor de la API (Node + Express + cluster)
+  # ------------------------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: ${APP_TARGET:-runtime}
+    image: node-demo:local
+    container_name: node-demo-app
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Punto de entrada a la BD dentro de la red de compose (fijo: el servicio
+      # "db", independiente del valor que traiga el .env local, donde suele
+      # haber DB_HOST=localhost para ejecución fuera de contenedores).
+      DB_HOST: db
+      # 1 worker en entornos acotados; NODE_ENV=production usará núcleos
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-1}
+    ports:
+      - "${PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8000/docs/json"]
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 5
+
+  # ------------------------------------------------------------------
+  # Base de datos MySQL 8
+  # ------------------------------------------------------------------
+  db:
+    image: mysql:8.4
+    container_name: node-demo-db
+    restart: unless-stopped
+    environment:
+      # La API se conecta como root (igual que fuera de Docker, ver .env.example).
+      # No definir MYSQL_USER: la imagen de MySQL rechaza MYSQL_USER="root".
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-1234}
+      MYSQL_DATABASE: ${DB_NAME:-prueba_db}
+    ports:
+      # El puerto del HOST se publica en 3307 para no chocar con un MySQL local
+      # en 3306. Dentro de la red de compose la app sigue usando `db:3306`
+      # (el puerto interno del contenedor), por lo que este mapeo solo afecta
+      # a clientes externos. Quita esta línea si no necesitas exponer MySQL.
+      - "${DB_PORT_HOST:-3307}:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 10
+
+volumes:
+  db_data:
+    driver: local

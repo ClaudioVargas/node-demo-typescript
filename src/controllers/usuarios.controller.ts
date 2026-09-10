@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { findUsuarios, findUsuario, createUsuario, likeTema, updateUsuario } from "../repository/usuario.repository";
+import { findUsuarios, findUsuario, createUsuario, likeTema, updateUsuario, deleteUsuario } from "../repository/usuario.repository";
 
 export const getUsuarios = async (_req: Request, res: Response) => res.status(200).json(await findUsuarios());
 export const getUsuario = async (req: Request, res: Response) => {
@@ -17,16 +17,25 @@ export const postUsuario = async (req: Request, res: Response) => {
 export const postLikeTema = async (req: Request, res: Response) => {
   try {
     const result = await likeTema(req.body);
-    if (result.error === "usuario") return res.status(409).json({ msg: "usuario con id " + req.body.usuarioId + " no existe" });
-    if (result.error === "tema") return res.status(409).json({ msg: "tema con id " + req.body.temaId + " no existe" });
-    if (result.error) return res.status(409).json({ msg: "usuarioTema con id: " + req.body.temaId + " ya existe" });
+    if ("error" in result) {
+      if (result.error === "usuario") return res.status(409).json({ msg: "usuario con id " + req.body.usuarioId + " no existe" });
+      if (result.error === "tema") return res.status(409).json({ msg: "tema con id " + req.body.temaId + " no existe" });
+      return res.status(409).json({ msg: "usuarioTema con id: " + req.body.temaId + " ya existe" });
+    }
     return res.status(201).json({ msg: result.response });
   } catch (error) { return res.status(500).json({ msg: "Contecte con el administrador" }); }
 };
 export const putUsuario = async (req: Request, res: Response) => {
   try {
-    if (await updateUsuario(req.body)) return res.json({ src: "usuario editado correctamente" });
+    // Se excluye email (y password) del update: no son modificables aquí
+    const { email, password, ...body } = req.body;
+    if (await updateUsuario(body)) return res.json({ src: "usuario editado correctamente" });
     return res.status(409).json({ msg: "Usuario con id " + req.body.id + "no exisete" });
   } catch (error) { return res.status(500).json({ msg: "Contecte con el administrador", error }); }
 };
-export const deleteUsuario = (req: Request, res: Response) => res.json({ msg: "deleteUsuario", id: req.params.id });
+export const eliminarUsuario = async (req: Request, res: Response) => {
+  try {
+    if (await deleteUsuario(req.params.id)) return res.json({ src: "usuario eliminado correctamente" });
+    return res.status(409).json({ msg: "Usuario con id " + req.body.id + "no exisete" });
+  } catch (error) { return res.status(500).json({ msg: "Contecte con el administrador", error }); }
+}
