@@ -75,12 +75,14 @@ describe('Clase Server', () => {
   });
 
   // Test de Rutas
-  test('debería registrar las rutas de la API y OAuth', () => {
+  test('debería registrar las rutas de la API y protegerlas con authJwt', () => {
+    expect(mockApp.use).toHaveBeenCalledWith('/api/auth', 'auth-router');
+    expect(mockApp.use).toHaveBeenCalledWith('/api', expect.any(Function));
     expect(mockApp.use).toHaveBeenCalledWith('/api/usuarios', 'usuario-router');
+    expect(mockApp.use).toHaveBeenCalledWith('/api/role', 'role-router');
     expect(mockApp.use).toHaveBeenCalledWith('/api/post', 'post-router');
     expect(mockApp.use).toHaveBeenCalledWith('/api/tema', 'tema-router');
-    expect(mockApp.get).toHaveBeenCalledWith('/main', expect.any(Function));
-    expect(mockApp.get).toHaveBeenCalledWith('/auth/google', expect.any(Function));
+    expect(mockApp.use).toHaveBeenCalledWith('/api/utils', 'stream-router');
   });
 
   // Test del método listen y sincronización de modelos

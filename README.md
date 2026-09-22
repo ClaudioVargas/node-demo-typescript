@@ -512,6 +512,15 @@ es el único resultado del CI/CD y el despliegue es reproducible a partir de él
 npm ci && npm run build && npm test
 docker compose build
 docker compose up -d
+
+```
+
+### Subir a hub.docker
+
+```bash
+ejemplo para subir a hub.docker
+docker tag node-demo:local srdarus/node_typescript:v1.0
+docker push srdarus/node_typescript:v1.0
 ```
 
 ## Limitaciones conocidas

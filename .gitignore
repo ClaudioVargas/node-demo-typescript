@@ -12,3 +12,6 @@ node_modules
 .env.production
 .env.docker
 !.env.example
+
+# Referencia de entornos que contiene secretos reales (no commitear)
+ENV-RENDER.md

@@ -75,27 +75,27 @@ class Server {
         this.app.use(errorHandler)
 
 
-        const clientId = process.env.GOOGLE_CLIENT_ID || ''
-        const clientSecret = process.env.GOOGLE_CLIENT_SECRET || ''
+        // const clientId = process.env.GOOGLE_CLIENT_ID || ''
+        // const clientSecret = process.env.GOOGLE_CLIENT_SECRET || ''
 
-        this.passport = passport.use(new GoogleStrategy({
-            clientID: clientId,
-            clientSecret: clientSecret,
-            callbackURL: "http://localhost:8000/auth/google/callback",
-            passReqToCallback: true,
-        }, (request, accessToken, refreshToken, profile, done) => {
-            return done(null, profile);
+        // this.passport = passport.use(new GoogleStrategy({
+        //     clientID: clientId,
+        //     clientSecret: clientSecret,
+        //     callbackURL: "http://localhost:8000/auth/google/callback",
+        //     passReqToCallback: true,
+        // }, (request, accessToken, refreshToken, profile, done) => {
+        //     return done(null, profile);
 
-        }
-        ))
+        // }
+        // ))
 
-        passport.serializeUser((user, done) => {
-            done(null, user);
-        });
+        // passport.serializeUser((user, done) => {
+        //     done(null, user);
+        // });
 
-        passport.deserializeUser((user: any, done) => {
-            done(null, user);
-        });
+        // passport.deserializeUser((user: any, done) => {
+        //     done(null, user);
+        // });
 
     }
 
