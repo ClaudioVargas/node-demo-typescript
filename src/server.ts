@@ -188,7 +188,9 @@ class Server {
         this.app.use(cors({
             origin: [
                 "http://localhost:8000", // Swagger UI
-                "http://localhost:5173" // react local
+                "http://localhost:5173", // react local
+                "https://node-typescript-v1-0-4.onrender.com", // render
+                "https://react-typescript-6u9s.onrender.com", // render react
             ],
             methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             allowedHeaders: ["Content-Type", "Authorization"],
