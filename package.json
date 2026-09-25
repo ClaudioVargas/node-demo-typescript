@@ -7,7 +7,7 @@
     "build": "tsc",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "start": "node dist/app.js",
-    "dev": "npx tsx --watch src/app.ts",
+    "dev": "npx tsx --env-file=.env.dev --watch src/app.ts",
     "test": "jest --runInBand --config jest.config.js"
   },
   "keywords": [],

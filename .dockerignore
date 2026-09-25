@@ -6,6 +6,8 @@ dist
 
 # Entornos / secretos (¡NUNCA copiar datos locales de configuración!)
 .env
+.env.dev
+.env.prod
 .env.local
 .env.staging
 .env.production

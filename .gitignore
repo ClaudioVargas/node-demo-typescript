@@ -7,6 +7,8 @@ node_modules
 
 # Entornos locales (¡NUNCA commitear!)
 .env
+.env.dev
+.env.prod
 .env.local
 .env.staging
 .env.production

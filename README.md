@@ -237,6 +237,14 @@ WEB_CONCURRENCY=8 NODE_ENV=production npm start
 > aproximada, `workers * DB_POOL_MAX`. Si tu MySQL tiene un límite bajo,
 > ajusta `DB_POOL_MAX` (p. ej. `5`) o reduce `WEB_CONCURRENCY`.
 
+### Archivos de entorno por comando
+
+| Comando                | Carga                         |
+| ---------------------- | ----------------------------- |
+| `npm run dev`          | `.env.dev` (vía `tsx --env-file`) |
+| `npm start` / tests    | `.env` (`dotenv/config`)      |
+| Plataforma (Render/…)  | Variables reales inyectadas (tienen prioridad sobre cualquier archivo) |
+
 ---
 
 ## Endpoints de la API
