@@ -72,7 +72,7 @@ node-demo-typescript/
 │   ├── docs/                        # Esquemas/annotations OpenAPI
 │   ├── interfaces/                  # Tipos compartidos (UpdateUsuarioRequest)
 │   └── validators/                  # authJwt, errorHandler, ApiError, tokenBlacklist, validators
-├── tests/                           # Suites de Jest (index.spec.ts, utils.test.ts)
+├── tests/                           # Suites de Jest (specs por módulo + utils.test.ts)
 ├── .env.example                     # Plantilla de variables de entorno (commitada)
 ├── .github/workflows/               # Pipelines CI/CD (estrategia Push / CIOps)
 │   ├── ci-cd-push.yml               # Push a develop/main/tag → tests + imagen GHCR
@@ -379,17 +379,209 @@ La spec se genera con `swagger-jsdoc` a partir de las anotaciones JSDoc de
 npm test
 ```
 
-Suites incluidas:
+25 suites / **175 test unitarios** (Jest + ts-jest + Supertest). Todas las
+pruebas se ejecutan con **mocks**: no requieren base de datos, red externa ni
+procesos hijos.
 
-- `tests/index.spec.ts` — Unit tests de la clase `Server` (Express, middlewares,
-  rutas OAuth, `listen`, `isLoggerIn`) con mocks.
-- `tests/utils.test.ts` — Rutas de utilidades (`/stream`, `/buffer`) y flujo JWT
-  con Supertest.
+### 1. Servidor (`Server`)
 
-Notas de configuración (ya resueltas):
+**`tests/index.spec.ts`** (existente)
+- Inicializa Express y configura las variables de entorno.
+- Registra los middlewares obligatorios (json, static, cors, passport).
+- Registra las rutas de la API (`/api/auth`, `/api/usuarios`, `/api/role`, `/api/post`, `/api/tema`, `/api/utils`).
+- Inicia el servidor y sincroniza los modelos (`db.sync({ alter: false })`).
+- `isLoggerIn`: llama a `next()` si `req.user` existe.
+- `isLoggerIn`: responde `401` si el usuario no está autenticado.
+
+**`tests/server.extra.spec.ts`**
+- `getPort` usa `8000` como puerto por defecto.
+- `getPort` respeta `process.env.PORT`.
+- `ensureDbConnected` resuelve cuando la BD autentica correctamente.
+- `ensureDbConnected` lanza el error guardado si la autenticación falló en el constructor.
+- Registra las rutas OAuth de Google y protege `/protected` con `isLoggerIn`.
+- `dbConnection` propaga el error de `db.authenticate` al guardado del constructor.
+
+### 2. Validadores (`tests/validators/`)
+
+**`authJwt.spec.ts`**
+- Sin cabecera `Authorization` → `ApiError 401 "No token provided"`.
+- Cabecera que no arranca con `Bearer ` → `ApiError 401`.
+- Token en blacklist → `ApiError 401 "Token revoked"` sin verificar el JWT.
+- Token válido → asigna `req.user` y llama a `next()`.
+- Token inválido o expirado → `ApiError 401 "Invalid token"`.
+
+**`tokenBlacklist.spec.ts`**
+- Un token en blacklist no expirado devuelve `true`.
+- TTL por defecto de 1 hora.
+- Un token expirado deja de estar en blacklist al consultarse.
+- Un token desconocido nunca está en blacklist.
+- `cleanupBlacklist` elimina solo los tokens vencidos.
+
+**`validateHelper.spec.ts`**
+- Llama a `next()` cuando no hay errores de validación.
+- Responde `403` con los errores cuando la validación falla.
+
+**`apiError.spec.ts`**
+- Expone `status`, `message` y `details`.
+- `details` es opcional.
+- `instanceof ApiError` funciona (por `setPrototypeOf`).
+
+**`errorHandler.spec.ts`**
+- Responde el `status` y `details` para un `ApiError`.
+- Responde `500` y loguea el error para un error genérico.
+
+**`user.validator.spec.ts`** (integración vía `usuario.router` con Supertest)
+- `POST` válido supera la validación y llega al controlador (201).
+- `POST` sin `name` responde `403`.
+- `POST` sin `email` responde `403`.
+- `POST` con email inválido responde `403`.
+- `PUT` sin `email` pasa la validación (campo opcional).
+- `PUT` con email inválido responde `403` (opcional pero validado si viene).
+- `PUT` sin `name` responde `403`.
+
+### 3. Repositorios (`tests/repositories/`)
+
+**`auth.repository.spec.ts`**
+- `hashPassword` genera el formato `salt$derived` (salt 32 hex, derived 128 hex).
+- `hashPassword` usa un salt distinto para la misma contraseña.
+- `signup` crea el usuario con la contraseña hasheada si el email es nuevo.
+- `signup` devuelve `null` si el email ya existe.
+- `login` devuelve un JWT con credenciales válidas (firmado con `expiresIn: 1h`).
+- `login` devuelve `null` con contraseña incorrecta.
+- `login` devuelve `null` si el usuario no existe.
+- `logout` agrega el token a la blacklist con su `exp`.
+- `logout` re-lanza el error si el token no se puede decodificar.
+
+**`usuario.repository.spec.ts`**
+- `findUsuarios` devuelve la lista completa.
+- `findUsuario` devuelve el usuario / `null` si no existe.
+- `createUsuario` rechaza un email duplicado (`null`).
+- `createUsuario` hashea la contraseña y crea el usuario (con timestamps).
+- `likeTema` falla si el usuario destino no existe (`{ error: 'usuario' }`).
+- `likeTema` falla si el tema no existe (`{ error: 'tema' }`).
+- `likeTema` falla si el like ya existe (`{ error: 'exists' }`).
+- `likeTema` registra el like si todo es válido (`{ response }`).
+- `updateUsuario` devuelve `false` si el usuario no existe.
+- `updateUsuario` actualiza solo los campos del body.
+- `updatePassword` devuelve `false` si el usuario no existe.
+- `updatePassword` guarda la contraseña hasheada.
+- `deleteUsuario` devuelve `false` si el usuario no existe.
+- `deleteUsuario` elimina al usuario existente.
+
+**`tema.repository.spec.ts`**
+- `findTemas` devuelve la lista; `findTema` devuelve el tema o `null`.
+- `createTema` devuelve `null` si el nombre ya existe.
+- `createTema` crea con `isActive: true` y timestamps.
+- `updateTema` devuelve `false` si no existe y aplica `set()` + `save()` si existe.
+- `deleteTema` devuelve `false` si no existe y elimina si existe.
+
+**`post.repository.spec.ts`**
+- `findPosts` devuelve la lista; `findPost` devuelve el post o `null`.
+- `createPost` crea el post con timestamps.
+- `updatePost` devuelve `false` si no existe y aplica `set()` + `save()` si existe.
+- `findPostsByUsuario` filtra por `usuarioId` e incluye los temas.
+
+**`role.repository.spec.ts`**
+- `findRoles` devuelve la lista; `createRole` crea el rol con timestamps.
+- `updateRole` lanza un error si el rol no existe.
+- `updateRole` actualiza los campos del body y devuelve el rol.
+
+**`stream.repository.spec.ts`**
+- `createStream` expone los chunks de texto en un `Readable`.
+- `createBuffer` serializa el body a JSON.
+- `createBuffer` usa el buffer por defecto si el body está vacío.
+- `nasaStream`: error tipado (`502`) si la API responde con error.
+- `nasaStream`: devuelve JSON si `content-type` es `application/json`.
+- `nasaStream`: lee binario vía `getReader` si el cuerpo lo expone.
+- `nasaStream`: usa `arrayBuffer` como fallback para contenido `image/*`.
+- `nasaStream`: hace fallback a texto si no es JSON ni imagen.
+- `nasaStream`: devuelve error `502` si `fetch` lanza una excepción.
+- `imageBuffer`: devuelve longitud y slice hex de la imagen.
+- `imageBuffer`: devuelve `null` si la respuesta no trae cuerpo.
+- `imageBuffer`: devuelve `null` si `fetch` lanza una excepción.
+
+### 4. Controladores (`tests/controllers/`) — repositorios mockeados
+
+**`auth.controller.spec.ts`**
+- `signup`: `400` si falta name/email/password, `409` si el email existe, `201` en éxito, y propaga errores a `next`.
+- `login`: `400` si faltan credenciales, `401` si son inválidas, `200` con el token.
+- `logout`: `400` sin cabecera Bearer, `200` agregando el token a la blacklist.
+- `hashPasswordTest`: `400` sin password, `200` con el hash.
+
+**`usuarios.controller.spec.ts`**
+- `getUsuarios` → `200`; `getUsuario` → `200` / `404`.
+- `postUsuario` → `409` email duplicado / `201` creado / `500` en error.
+- `postLikeTema` → `409` (usuario, tema o like duplicado) / `201` en éxito.
+- `putUsuario` → excluye `email` y `password` del body; `200` / `409` / `500`.
+- `eliminarUsuario` → `200` / `409`.
+
+**`tema.controller.spec.ts`**
+- `getTemas` → `200`; `getTema` → `200` / `404`.
+- `postTema` → `409` duplicado / `200` creado.
+- `putTema` y `eliminarTema` → `200` / `409`.
+
+**`post.controller.spec.ts`**
+- `getPosts` → `200`; `getPost` → `200` / `404`.
+- `postPost` → `201` / `500`; `putPost` → `200` / `409`.
+- `deletePost` → `200` con el `id` (placeholder).
+- `getPostsByUsuario` → `200` con posts / `404` sin posts.
+
+**`role.controller.spec.ts`**
+- `getRoles` → `200`; `postRole` → `201`; `putRole` → `201` / `500`; `deleteRole` → `200` con el `id`.
+
+**`stream.controller.spec.ts`**
+- `getStream` fija `Content-Type: text/plain` y hace *pipe* del stream.
+- `postBuffer` devuelve la info del buffer creado.
+- `nasaStream` → JSON / error (`502`) / binario con `Cache-Control: no-cache` / texto plano.
+- `imageBuffer` → `200` con los datos / `502` si la API falla / propaga errores a `next`.
+
+### 5. Utilidades e infraestructura
+
+**`tests/logger.spec.ts`**
+- `info` escribe a consola y al archivo con el formato `[timestamp] [nivel] [contexto] mensaje | meta`.
+- `warn` usa `console.warn` y la etiqueta `[WARN]`.
+- `error` con meta `Error` incluye mensaje y stack en la línea.
+- Un objeto cíclico no rompe el log (cae a `String(value)`).
+- Un valor primitivo se serializa con `String()`.
+- Si falla la escritura al archivo, el log de consola igual se emite.
+
+**`tests/swagger.spec.ts`**
+- Monta la UI en `/docs` y expone el JSON de la spec en `/docs/json`.
+- `GET /docs/json` devuelve la spec con `Cache-Control: no-store`.
+- El middleware de `/docs` añade `no-store` y continúa (`next()`).
+
+**`tests/concurrency.spec.ts`**
+- `NODE_ENV=test` → siempre 1 worker.
+- `WEB_CONCURRENCY` entero ≥ 1 fuerza el número de workers.
+- `WEB_CONCURRENCY` no entero se ignora en desarrollo.
+- `WEB_CONCURRENCY` 0 o negativo se ignora.
+- En producción usa un worker por núcleo (`os.availableParallelism`).
+- En producción sin `availableParallelism` usa `os.cpus()` como fallback.
+
+**`tests/db.connection.spec.ts`**
+- Usa valores por defecto sin variables de entorno.
+- Sin CA configurada el TLS conecta sin verificar el certificado.
+- `DB_SSL=false` desactiva el TLS (`'off'`).
+- Un `DB_PORT` inválido cae al puerto por defecto.
+- Una URL `mysql://...` se parsea y se reporta como `viaUrl`.
+- Un protocolo no soportado lanza error al cargar el módulo.
+- `DB_SSL_CA_PATH` habilita la verificación de certificado.
+
+### Utilidades (rutas) — `tests/utils.test.ts` (existente)
+
+- `GET /api/utils/stream` transmite los chunks de texto (Supertest).
+- `POST /api/utils/buffer` devuelve la info del buffer creado.
+- Login + acceso a una ruta protegida con JWT.
+
+### Notas de configuración
 
 - Existe una única fuente de configuración de Jest: **`jest.config.js`**.
 - `testMatch` se limita a `tests/**/*.{spec,test}.ts` y se ignora `dist/`.
+- La carpeta `tests/` está **excluida del `tsconfig.json` de compilación**
+  (`include: ["src"]`, `exclude: ["tests"]`), por lo que el editor puede marcar
+  `Cannot find name 'jest'` en los `.spec.ts`. Jest + ts-jest los ejecutan sin
+  problemas: los tipos de Jest se resuelven desde el `tsconfig.json` raíz
+  (`"types": ["jest", "node"]`) y los globales existen en tiempo de ejecución.
 
 ---
 
